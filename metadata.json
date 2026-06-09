@@ -1,0 +1,6 @@
+{
+  "name": "ChipNG",
+  "description": "A premium customizable link-in-bio SaaS with 3D digital business cards and NFC integration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
