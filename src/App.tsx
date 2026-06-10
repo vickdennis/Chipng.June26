@@ -33,6 +33,22 @@ import {
   Briefcase
 } from "lucide-react";
 
+export const ChipLogo = ({ className = "w-8 h-8" }: { className?: string }) => (
+  <svg viewBox="0 0 100 100" className={className} xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="23" y="23" width="54" height="54" rx="8" ry="8" />
+    <rect x="36" y="36" width="28" height="28" rx="4" ry="4" strokeWidth="4" />
+    <rect x="42" y="42" width="16" height="16" rx="2" ry="2" fill="currentColor" stroke="none" />
+    <path d="M23 35 h-6 M23 42.5 h-6 M23 50 h-6 M23 57.5 h-6 M23 65 h-6" />
+    <path d="M77 35 h6 M77 42.5 h6 M77 50 h6 M77 57.5 h6 M77 65 h6" />
+    <path d="M36 23 v-5 M45.33 23 v-5 M54.66 23 v-5 M64 23 v-5" />
+    <path d="M36 77 v5 M45.33 77 v5 M54.66 77 v5 M64 77 v5" />
+    <circle cx="31" cy="31" r="2.5" fill="currentColor" stroke="none" />
+    <circle cx="69" cy="31" r="2.5" fill="currentColor" stroke="none" />
+    <circle cx="31" cy="69" r="2.5" fill="currentColor" stroke="none" />
+    <circle cx="69" cy="69" r="2.5" fill="currentColor" stroke="none" />
+  </svg>
+);
+
 export default function App() {
   // Navigation & Screen Control states
   const [currentScreen, setCurrentScreen] = useState<"landing" | "auth" | "dashboard" | "public">("landing");
@@ -537,10 +553,10 @@ export default function App() {
           {/* Premium Header Navigation */}
           <header className="h-16 border-b border-white/10 flex items-center justify-between px-6 md:px-12 bg-zinc-900/50 backdrop-blur-xl shrink-0 z-20">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-tr from-indigo-500 to-emerald-400 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20">
-                C
+              <div className="text-white">
+                <ChipLogo className="w-8 h-8" />
               </div>
-              <span className="text-white font-bold tracking-tight text-xl">ChipNG</span>
+              <span className="text-white font-bold tracking-tight text-xl uppercase">ChipNG</span>
             </div>
 
             <div className="flex items-center gap-4">
@@ -817,10 +833,10 @@ export default function App() {
           <nav className="h-16 border-b border-white/10 flex items-center justify-between px-6 md:px-8 bg-zinc-900/50 backdrop-blur-xl shrink-0 z-20">
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-tr from-indigo-500 to-emerald-400 rounded-lg flex items-center justify-center font-bold text-white">
-                  C
+                <div className="text-white">
+                  <ChipLogo className="w-8 h-8" />
                 </div>
-                <span className="text-white font-bold tracking-tight text-xl">ChipNG</span>
+                <span className="text-white font-bold tracking-tight text-xl uppercase">ChipNG</span>
               </div>
               
               <div className="h-4 w-px bg-white/10 hidden sm:block" />
