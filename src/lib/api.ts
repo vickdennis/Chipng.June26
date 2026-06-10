@@ -1,4 +1,4 @@
-import { supabase, isSupabaseConfigured, supabaseUrl } from "./supabaseClient";
+import { supabase, isSupabaseConfigured, supabaseUrl } from "../supabaseClient.js";
 import { Profile, LinkItem, UserSession, ThemeConfig, NfcData } from "../types";
 
 // Setup offline fallback memory/local state storage

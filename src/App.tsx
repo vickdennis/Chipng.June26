@@ -6,7 +6,7 @@ import ThemeSelector from "./components/ThemeSelector";
 import LinkListManager from "./components/LinkListManager";
 import AddEditLinkModal from "./components/AddEditLinkModal";
 import NfcTagSettings from "./components/NfcTagSettings";
-import { supabase } from "./lib/supabaseClient";
+import { supabase } from "./supabaseClient.js";
 import { 
   Wifi, 
   User, 
@@ -52,6 +52,7 @@ export const ChipLogo = ({ className = "w-8 h-8" }: { className?: string }) => (
 export default function App() {
   // Navigation & Screen Control states
   const [currentScreen, setCurrentScreen] = useState<"landing" | "auth" | "dashboard" | "public" | "not_found">("landing");
+  const [authError, setAuthError] = useState<string | null>(null);
   const [authMode, setAuthMode] = useState<"login" | "signup" | "forgot_password" | "update_password">("login");
   const [activeTab, setActiveTab] = useState<"profile" | "links" | "nfc" | "theme">("profile");
 
@@ -171,11 +172,26 @@ export default function App() {
       } else if (user) {
         // If recovery mode is active, do not force dashboard
         if (authMode !== 'update_password') {
+          if (path === 'login' || path === 'register') {
+            window.history.replaceState({}, '', '/');
+          }
           setCurrentScreen("dashboard");
         }
       } else {
         if (authMode !== 'update_password') {
-          setCurrentScreen("landing");
+          if (path === "dashboard") {
+            window.history.replaceState({}, '', '/login');
+            setAuthMode("login");
+            setCurrentScreen("auth");
+          } else if (path === "login" || path === "auth") {
+            setAuthMode("login");
+            setCurrentScreen("auth");
+          } else if (path === "register") {
+            setAuthMode("signup");
+            setCurrentScreen("auth");
+          } else {
+            setCurrentScreen("landing");
+          }
         }
       }
       setIsLoading(false);
@@ -272,9 +288,12 @@ export default function App() {
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    setAuthError(null);
+
+    // Form logic starts
     if (authMode === "forgot_password") {
       if (!emailInput) {
-        showNotification("Please provide your email.", "error");
+        setAuthError("Please provide your email.");
         return;
       }
       setIsLoading(true);
@@ -284,7 +303,7 @@ export default function App() {
         setAuthMode("login");
         setEmailInput("");
       } catch (err: any) {
-        showNotification(err.message || "Failed to trigger password recovery.", "error");
+        setAuthError(err.message || "Failed to trigger password recovery.");
       } finally {
         setIsLoading(false);
       }
@@ -293,7 +312,7 @@ export default function App() {
 
     if (authMode === "update_password") {
       if (!passwordInput) {
-        showNotification("Please provide your new password.", "error");
+        setAuthError("Please provide your new password.");
         return;
       }
       setIsLoading(true);
@@ -305,7 +324,7 @@ export default function App() {
         await loadUserData();
         setCurrentScreen("dashboard");
       } catch (err: any) {
-        showNotification(err.message || "Failed to update password.", "error");
+        setAuthError(err.message || "Failed to update password.");
       } finally {
         setIsLoading(false);
       }
@@ -313,7 +332,7 @@ export default function App() {
     }
 
     if (!emailInput || !passwordInput) {
-      showNotification("Please provide both email and password.", "error");
+      setAuthError("Please provide both email and password.");
       return;
     }
 
@@ -321,38 +340,78 @@ export default function App() {
     try {
       if (authMode === "signup") {
         if (!usernameInput) {
-          showNotification("Username is required for registration.", "error");
+          setAuthError("Username is required for registration.");
           setIsLoading(false);
           return;
         }
 
         const available = await api.profile.checkUsername(usernameInput);
         if (!available) {
-          showNotification("Duplicate username detected. Please select a different username.", "error");
+          setAuthError("Duplicate username detected. Please select a different username.");
           setIsLoading(false);
           return;
         }
 
-        const session = await api.auth.signUp(
-          emailInput,
-          passwordInput,
-          usernameInput,
-          displayNameInput || usernameInput
-        );
-        setCurrentUser(session.user);
-        // Sometimes signup doesn't log in immediately if email confirmation is required:
-        if (session.token) {
+        const { data, error } = await supabase!.auth.signUp({
+          email: emailInput,
+          password: passwordInput,
+          options: {
+            data: {
+              display_name: displayNameInput || usernameInput,
+              username: usernameInput.toLowerCase().trim()
+            }
+          }
+        });
+
+        if (error) {
+          setAuthError(error.message);
+          setIsLoading(false);
+          return;
+        }
+
+        if (data.user) {
+           setCurrentUser({ 
+             id: data.user.id, 
+             email: data.user.email || emailInput,
+             username: usernameInput.toLowerCase().trim()
+           });
+        }
+
+        const session = data.session;
+        if (session) {
           showNotification("Account registered! Welcome to ChipNG.", "success");
         } else {
-          showNotification("Registration successful! Check your email to confirm.", "success");
+          showNotification("Check your email and confirm your account before logging in.", "success");
           setAuthMode("login");
           setIsLoading(false);
           return;
         }
       } else {
-        const session = await api.auth.signIn(emailInput, passwordInput);
-        setCurrentUser(session.user);
-        showNotification("Welcome back! Redirecting to dashboard...", "success");
+        const { data, error } = await supabase!.auth.signInWithPassword({
+          email: emailInput,
+          password: passwordInput,
+        });
+
+        if (error) {
+           setAuthError(error.message);
+           setIsLoading(false);
+           return;
+        }
+
+        if (!data.session) {
+           setAuthError("Session could not be established. Please try again.");
+           setIsLoading(false);
+           return;
+        }
+
+        if (data.user) {
+          setCurrentUser({
+            id: data.user.id,
+            email: data.user.email || emailInput,
+            username: emailInput.split("@")[0] // Just fallback, loadUserData will fetch real profile
+          });
+          showNotification("Welcome back! Redirecting to home...", "success");
+        }
       }
       
       setEmailInput("");
@@ -361,9 +420,12 @@ export default function App() {
       setDisplayNameInput("");
 
       await loadUserData();
+      
+      // Redirect to Home page exactly as requested "/"
+      window.history.pushState({}, '', '/');
       setCurrentScreen("dashboard");
     } catch (err: any) {
-      showNotification(err.message || "Failed authenticate credentials.", "error");
+      setAuthError(err.message || "Failed authenticate credentials.");
     } finally {
       setIsLoading(false);
     }
@@ -376,7 +438,9 @@ export default function App() {
     setProfile(null);
     setLinks([]);
     showNotification("Logged out successfully.", "info");
-    setCurrentScreen("landing");
+    window.history.pushState({}, '', '/login');
+    setAuthMode('login');
+    setCurrentScreen("auth");
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -931,6 +995,13 @@ export default function App() {
                   : authMode === "update_password" ? "Update Password"
                   : "Enter Secure Area"}
               </button>
+              
+              {/* Added explicit error handling display as requested */}
+              {authError && (
+                <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                  <p className="text-red-400 text-xs text-center">{authError}</p>
+                </div>
+              )}
             </form>
 
             {api.isUsingSupabase() && (authMode === "login" || authMode === "signup") && (
