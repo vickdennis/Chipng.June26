@@ -137,8 +137,10 @@ export default function App() {
                       email: session.user.email || "",
                       username: session.user.user_metadata?.username || session.user.email?.split("@")[0] || ""
                     });
-                    loadUserData();
-                    setCurrentScreen("dashboard");
+                    loadUserData().then(() => {
+                      window.history.replaceState({}, '', '/');
+                      setCurrentScreen("dashboard");
+                    });
                  }
               }
             }
@@ -1013,11 +1015,12 @@ export default function App() {
                 <button
                   type="button"
                   onClick={async () => {
+                    setAuthError(null);
                     setIsLoading(true);
                     try {
                       await api.auth.signInWithGoogle();
                     } catch (e: any) {
-                      showNotification(e.message, "error");
+                      setAuthError(e.message);
                       setIsLoading(false);
                     }
                   }}
