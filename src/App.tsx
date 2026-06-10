@@ -53,6 +53,7 @@ export default function App() {
   // Navigation & Screen Control states
   const [currentScreen, setCurrentScreen] = useState<"landing" | "auth" | "dashboard" | "public" | "not_found">("landing");
   const [authError, setAuthError] = useState<string | null>(null);
+  const [authSuccess, setAuthSuccess] = useState<string | null>(null);
   const [authMode, setAuthMode] = useState<"login" | "signup" | "forgot_password" | "update_password">("login");
   const [activeTab, setActiveTab] = useState<"profile" | "links" | "nfc" | "theme">("profile");
 
@@ -291,6 +292,7 @@ export default function App() {
     e.preventDefault();
 
     setAuthError(null);
+    setAuthSuccess(null);
 
     // Form logic starts
     if (authMode === "forgot_password") {
@@ -371,23 +373,14 @@ export default function App() {
           return;
         }
 
-        if (data.user) {
-           setCurrentUser({ 
-             id: data.user.id, 
-             email: data.user.email || emailInput,
-             username: usernameInput.toLowerCase().trim()
-           });
-        }
-
-        const session = data.session;
-        if (session) {
-          showNotification("Account registered! Welcome to ChipNG.", "success");
-        } else {
-          showNotification("Check your email and confirm your account before logging in.", "success");
-          setAuthMode("login");
-          setIsLoading(false);
-          return;
-        }
+        // Successfully signed up. Do not auto-login.
+        setAuthSuccess("Account created successfully! Please check your email to confirm your account, then log in.");
+        setAuthMode("login");
+        setPasswordInput(""); // keep email intact
+        setUsernameInput(""); 
+        setDisplayNameInput("");
+        setIsLoading(false);
+        return;
       } else {
         const { data, error } = await supabase!.auth.signInWithPassword({
           email: emailInput,
@@ -1004,6 +997,11 @@ export default function App() {
                   <p className="text-red-400 text-xs text-center">{authError}</p>
                 </div>
               )}
+              {authSuccess && (
+                <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
+                  <p className="text-emerald-400 text-xs text-center">{authSuccess}</p>
+                </div>
+              )}
             </form>
 
             {api.isUsingSupabase() && (authMode === "login" || authMode === "signup") && (
@@ -1016,6 +1014,7 @@ export default function App() {
                   type="button"
                   onClick={async () => {
                     setAuthError(null);
+                    setAuthSuccess(null);
                     setIsLoading(true);
                     try {
                       await api.auth.signInWithGoogle();
