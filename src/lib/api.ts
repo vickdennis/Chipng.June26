@@ -274,7 +274,9 @@ export const api = {
       display_name?: string;
       bio?: string;
       avatar_url?: string;
+      cover_image?: string;
       theme?: Partial<ThemeConfig>;
+      icon_style?: string;
       nfc_data?: Partial<NfcData>;
       username?: string;
     }): Promise<Profile> => {

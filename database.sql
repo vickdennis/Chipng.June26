@@ -11,7 +11,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     display_name TEXT,
     bio TEXT,
     avatar_url TEXT,
+    cover_image TEXT,
     theme JSONB DEFAULT '{"primaryColor": "#6366f1", "backgroundColor": "#0f172a", "cardStyle": "glassmorphism", "textColor": "#ffffff"}'::jsonb,
+    icon_style TEXT,
     nfc_data JSONB DEFAULT '{"serialNumber": null, "activationStatus": "pending"}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -103,13 +105,15 @@ BEGIN
         new_username := LOWER(SPLIT_PART(new.email, '@', 1)) || '-' || substring(md5(random()::text) from 1 for 4);
     END LOOP;
 
-    INSERT INTO public.profiles (id, username, display_name, bio, avatar_url)
+    INSERT INTO public.profiles (id, username, display_name, bio, avatar_url, cover_image, icon_style)
     VALUES (
         new.id,
         new_username,
         COALESCE(new.raw_user_meta_data->>'display_name', SPLIT_PART(new.email, '@', 1)),
         'Hello, I am using ChipNG!',
-        new.raw_user_meta_data->>'avatar_url'
+        new.raw_user_meta_data->>'avatar_url',
+        NULL,
+        NULL
     );
     RETURN NEW;
 END;

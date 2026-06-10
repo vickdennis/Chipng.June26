@@ -58,6 +58,7 @@ export default function App() {
   // User Authentication sessions state
   const [currentUser, setCurrentUser] = useState<UserSession["user"] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const [notification, setNotification] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
   // Authenticated states
@@ -178,6 +179,7 @@ export default function App() {
         }
       }
       setIsLoading(false);
+      setIsInitializing(false);
     };
 
     initializeSessionAndPath();
@@ -621,6 +623,14 @@ export default function App() {
             : "#0A0A0A"
       }}
     >
+      {/* Initial load overlay */}
+      {isInitializing && (
+        <div className="fixed inset-0 z-[200] bg-[#0A0A0A] flex flex-col items-center justify-center">
+           <div className="w-12 h-12 border-4 border-white/10 border-t-amber-500 rounded-full animate-spin"></div>
+           <div className="mt-4 text-xs font-bold tracking-widest text-neutral-400 uppercase">Synchronizing</div>
+        </div>
+      )}
+
       {/* Toast Alert Notifications */}
       {notification && (
         <div className="fixed top-4 right-4 z-[100] max-w-sm p-4 rounded-xl border shadow-xl flex items-start gap-3 backdrop-blur-md animate-fade-in"
@@ -1409,6 +1419,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => {
+                  window.history.pushState({}, '', '/');
                   const user = api.auth.getCurrentUser();
                   if (user) {
                     setCurrentScreen("dashboard");
