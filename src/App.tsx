@@ -146,8 +146,26 @@ export default function App() {
       document.title = "ChipNG — Contactless NFC Smart Cards & Digital 3D Profiles";
     } else if (currentScreen === "auth") {
       document.title = "Initialize Secure Card | ChipNG Smart Profiles";
+    } else if (currentScreen === "public" && publicViewData) {
+      const p = publicViewData.profile;
+      document.title = `${p.display_name || p.username} — Contactless NFC Profile | ChipNG`;
+      
+      const description = p.bio || `Check out ${p.display_name || p.username}'s premium digital smart card on ChipNG.`;
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) metaDesc.setAttribute("content", description);
+      
+      const ogDesc = document.querySelector('meta[property="og:description"]');
+      if (ogDesc) ogDesc.setAttribute("content", description);
+      
+      const ogTitle = document.querySelector('meta[property="og:title"]');
+      if (ogTitle) ogTitle.setAttribute("content", document.title);
+      
+      if (p.avatar_url) {
+         const ogImage = document.querySelector('meta[property="og:image"]');
+         if (ogImage) ogImage.setAttribute("content", p.avatar_url);
+      }
     }
-  }, [currentScreen, profile]);
+  }, [currentScreen, profile, publicViewData]);
 
   // Fetch all profiles & links for authenticated user
   const loadUserData = async () => {
@@ -263,16 +281,44 @@ export default function App() {
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      showNotification("Image exceeds maximum 2MB constraint.", "error");
+    if (file.size > 5 * 1024 * 1024) {
+      showNotification("Image exceeds maximum 5MB constraint.", "error");
       return;
     }
 
     const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setEditedAvatar(reader.result);
-        showNotification("Local avatar loaded into live preview!", "success");
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        
+        let width = img.width;
+        let height = img.height;
+        const maxSize = 400; // Cap dimension
+
+        if (width > height) {
+          if (width > maxSize) {
+            height *= maxSize / width;
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width *= maxSize / height;
+            height = maxSize;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        const compressedDataUrl = canvas.toDataURL("image/webp", 0.8);
+        setEditedAvatar(compressedDataUrl);
+        showNotification("Avatar optimized and loaded into preview!", "success");
+      };
+      if (typeof event.target?.result === "string") {
+        img.src = event.target.result;
       }
     };
     reader.readAsDataURL(file);
