@@ -35,7 +35,7 @@ export const api = {
             email: data.user.email || email,
             username: username.toLowerCase().trim()
           },
-          token: data.session?.access_token || "supabase-auth"
+          token: data.session?.access_token || null
         };
       } else {
         // Local Sandbox Mode via Express/SQLite-mock
@@ -98,6 +98,42 @@ export const api = {
         localStorage.setItem(TOKEN_KEY, data.token);
         localStorage.setItem(USER_KEY, JSON.stringify(data.user));
         return data;
+      }
+    },
+
+    signInWithGoogle: async (): Promise<void> => {
+      if (isSupabaseConfigured && supabase) {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin
+          }
+        });
+        if (error) throw new Error(error.message);
+      } else {
+        throw new Error("Google login is only available when connected to Supabase.");
+      }
+    },
+
+    resetPasswordForEmail: async (email: string): Promise<void> => {
+      if (isSupabaseConfigured && supabase) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}?reset_password=true`,
+        });
+        if (error) throw new Error(error.message);
+      } else {
+        throw new Error("Password reset is only available when connected to Supabase.");
+      }
+    },
+
+    updatePassword: async (newPassword: string): Promise<void> => {
+      if (isSupabaseConfigured && supabase) {
+        const { error } = await supabase.auth.updateUser({
+          password: newPassword
+        });
+        if (error) throw new Error(error.message);
+      } else {
+        throw new Error("Updating password is only available when connected to Supabase.");
       }
     },
 
@@ -207,6 +243,30 @@ export const api = {
         }
 
         return await response.json();
+      }
+    },
+
+    uploadAvatar: async (file: File): Promise<string> => {
+      if (isSupabaseConfigured && supabase) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Unauthenticated");
+
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+        const filePath = `${user.id}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, file);
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+        return data.publicUrl;
+      } else {
+        throw new Error("Avatar upload is only supported with Supabase configured.");
       }
     },
 
