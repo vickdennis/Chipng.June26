@@ -51,7 +51,7 @@ export const ChipLogo = ({ className = "w-8 h-8" }: { className?: string }) => (
 
 export default function App() {
   // Navigation & Screen Control states
-  const [currentScreen, setCurrentScreen] = useState<"landing" | "auth" | "dashboard" | "public">("landing");
+  const [currentScreen, setCurrentScreen] = useState<"landing" | "auth" | "dashboard" | "public" | "not_found">("landing");
   const [authMode, setAuthMode] = useState<"login" | "signup" | "forgot_password" | "update_password">("login");
   const [activeTab, setActiveTab] = useState<"profile" | "links" | "nfc" | "theme">("profile");
 
@@ -195,6 +195,8 @@ export default function App() {
       document.title = "ChipNG — Contactless NFC Smart Cards & Digital 3D Profiles";
     } else if (currentScreen === "auth") {
       document.title = "Initialize Secure Card | ChipNG Smart Profiles";
+    } else if (currentScreen === "not_found") {
+      document.title = "Profile Not Found | ChipNG";
     } else if (currentScreen === "public" && publicViewData) {
       const p = publicViewData.profile;
       document.title = `${p.display_name || p.username} — Contactless NFC Profile | ChipNG`;
@@ -218,6 +220,9 @@ export default function App() {
       if (p.avatar_url) {
          const ogImage = document.querySelector('meta[property="og:image"]');
          if (ogImage) ogImage.setAttribute("content", p.avatar_url);
+
+         const twImage = document.querySelector('meta[name="twitter:image"]');
+         if (twImage) twImage.setAttribute("content", p.avatar_url);
       }
     }
   }, [currentScreen, profile, publicViewData]);
@@ -254,9 +259,8 @@ export default function App() {
       setPublicViewData(data);
       setCurrentScreen("public");
     } catch (err: any) {
-      showNotification("This ChipNG public profile is currently offline or does not exist.", "error");
       setPublicViewData(null);
-      setCurrentScreen("landing");
+      setCurrentScreen("not_found");
     } finally {
       setIsLoading(false);
     }
@@ -1488,6 +1492,37 @@ export default function App() {
               POWERED BY CHIPNG NFC HARDWARE NETWORKS
             </p>
 
+          </div>
+        </div>
+      )}
+
+      {/* RENDER SCREEN 5: PROFILE NOT FOUND */}
+      {currentScreen === "not_found" && (
+        <div id="not-found-screen" className="flex-1 flex flex-col justify-center items-center p-6 min-h-screen relative overflow-hidden bg-[#0A0A0A]">
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-[30%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[30%] h-[30%] rounded-full blur-[120px] bg-red-500/10"></div>
+          </div>
+          
+          <div className="relative z-10 text-center max-w-sm mx-auto space-y-6">
+            <div className="w-20 h-20 mx-auto bg-red-500/10 border border-red-500/20 rounded-full flex items-center justify-center mb-6">
+              <span className="text-3xl">📴</span>
+            </div>
+            
+            <h1 className="text-4xl font-black text-white tracking-tight">Profile Offline</h1>
+            <p className="text-sm text-zinc-400">
+              The digital smart card you are looking for does not exist or has been disabled by the owner.
+            </p>
+            
+            <button
+              type="button"
+              onClick={() => {
+                window.history.pushState({}, '', '/');
+                setCurrentScreen("landing");
+              }}
+              className="mt-8 px-6 py-3 bg-white text-black font-bold text-sm rounded-xl transition-all hover:bg-neutral-200 shadow-xl"
+            >
+              Learn about ChipNG
+            </button>
           </div>
         </div>
       )}
