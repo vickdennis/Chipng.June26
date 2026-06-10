@@ -45,12 +45,12 @@ export const api = {
           body: JSON.stringify({ email, password, username, display_name })
         });
 
+        const data = await response.json();
+
         if (!response.ok) {
-          const result = await response.json();
-          throw new Error(result.error || "Failed to sign up.");
+          throw new Error(data.error || "Failed to sign up.");
         }
 
-        const data = await response.json();
         localStorage.setItem(TOKEN_KEY, data.token);
         localStorage.setItem(USER_KEY, JSON.stringify(data.user));
         return data;
@@ -89,12 +89,12 @@ export const api = {
           body: JSON.stringify({ email, password })
         });
 
+        const data = await response.json();
+
         if (!response.ok) {
-          const result = await response.json();
-          throw new Error(result.error || "Failed to log in.");
+          throw new Error(data.error || "Failed to log in.");
         }
 
-        const data = await response.json();
         localStorage.setItem(TOKEN_KEY, data.token);
         localStorage.setItem(USER_KEY, JSON.stringify(data.user));
         return data;
