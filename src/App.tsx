@@ -80,8 +80,9 @@ export default function App() {
     const initializeSessionAndPath = async () => {
       setIsLoading(true);
       
-      const path = window.location.pathname.replace(/^\//, "").trim();
-      const isPublicProfilePath = path && !["dashboard", "auth", "login", "register"].includes(path);
+      const rawPath = window.location.pathname.replace(/^\//, "").trim();
+      const path = decodeURIComponent(rawPath.split("/")[0]).trim();
+      const isPublicProfilePath = path && !["dashboard", "auth", "login", "register", "index.html"].includes(path);
 
       let user = null;
       if (api.isUsingSupabase() && supabase) {
@@ -136,6 +137,17 @@ export default function App() {
 
     initializeSessionAndPath();
   }, []);
+
+  // Update document/browser tab title dynamically based on the current screen
+  useEffect(() => {
+    if (currentScreen === "dashboard" && profile) {
+      document.title = `${profile.display_name || profile.username} | Developer Dashboard — ChipNG`;
+    } else if (currentScreen === "landing") {
+      document.title = "ChipNG — Contactless NFC Smart Cards & Digital 3D Profiles";
+    } else if (currentScreen === "auth") {
+      document.title = "Initialize Secure Card | ChipNG Smart Profiles";
+    }
+  }, [currentScreen, profile]);
 
   // Fetch all profiles & links for authenticated user
   const loadUserData = async () => {
@@ -245,6 +257,11 @@ export default function App() {
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      showNotification("Selected file must be an image format (PNG, JPG, SVG, GIF, WebP).", "error");
+      return;
+    }
 
     if (file.size > 2 * 1024 * 1024) {
       showNotification("Image exceeds maximum 2MB constraint.", "error");

@@ -40,6 +40,9 @@ export default function PublicProfileView({ usernameParam }: PublicProfileViewPr
         const data = await api.profile.getPublicProfile(usernameParam);
         setProfile(data.profile);
         setLinks(data.links);
+        if (data.profile) {
+          document.title = `${data.profile.display_name || data.profile.username} — Contactless NFC Profile | ChipNG`;
+        }
       } catch (err: any) {
         console.error("Error loading profile", err);
         setErrorMsg("The requested ChipNG profile has not been activated yet.");
@@ -48,6 +51,10 @@ export default function PublicProfileView({ usernameParam }: PublicProfileViewPr
       }
     }
     loadPublic();
+
+    return () => {
+      document.title = "ChipNG — Contactless NFC Smart Cards & Digital 3D Profiles";
+    };
   }, [usernameParam]);
 
   // vCard file builder helper to save directly to phone memory

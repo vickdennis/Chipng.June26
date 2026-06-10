@@ -1,4 +1,4 @@
-import { supabase, isSupabaseConfigured } from "./supabaseClient";
+import { supabase, isSupabaseConfigured, supabaseUrl } from "./supabaseClient";
 import { Profile, LinkItem, UserSession, ThemeConfig, NfcData } from "../types";
 
 // Setup offline fallback memory/local state storage
@@ -113,7 +113,7 @@ export const api = {
     getCurrentUser: () => {
       if (isSupabaseConfigured && supabase) {
         // Return async check if we want, or simple session check
-        const session = localStorage.getItem("sb-" + ((import.meta as any).env?.VITE_SUPABASE_URL || "") + "-auth-token");
+        const session = localStorage.getItem("sb-" + supabaseUrl + "-auth-token");
         if (session) {
           try {
             const parsed = JSON.parse(session);
@@ -171,14 +171,28 @@ export const api = {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("Unauthenticated");
 
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
+        let attempts = 0;
+        let lastErrorMsg = "";
+        while (attempts < 5) {
+          const { data, error } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", user.id)
+            .maybeSingle();
 
-        if (error) throw new Error(error.message);
-        return data as Profile;
+          if (data) {
+            return data as Profile;
+          }
+          if (error) {
+            lastErrorMsg = error.message;
+          }
+          attempts++;
+          if (attempts < 5) {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+          }
+        }
+
+        throw new Error(lastErrorMsg || "Profile record creation is taking longer than expected. Please refresh.");
       } else {
         const token = localStorage.getItem(TOKEN_KEY);
         const response = await fetch("/api/profile", {
