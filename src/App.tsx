@@ -131,18 +131,17 @@ export default function App() {
                 setAuthMode('update_password');
                 setCurrentScreen('auth');
               } else if (event === 'SIGNED_IN' && session) {
-                 // Might come from OAuth provider
-                 if (currentScreen === 'auth' || !currentUser) {
-                    setCurrentUser({
-                      id: session.user.id,
-                      email: session.user.email || "",
-                      username: session.user.user_metadata?.username || session.user.email?.split("@")[0] || ""
-                    });
-                    loadUserData().then(() => {
-                      window.history.replaceState({}, '', '/');
-                      setCurrentScreen("dashboard");
-                    });
-                 }
+                 // Always make sure user is redirected to dashboard upon sign in event
+                 // We don't rely on currentScreen enclosure state here
+                 setCurrentUser({
+                   id: session.user.id,
+                   email: session.user.email || "",
+                   username: session.user.user_metadata?.username || session.user.email?.split("@")[0] || ""
+                 });
+                 loadUserData().then(() => {
+                   window.history.replaceState({}, '', '/');
+                   setCurrentScreen("dashboard");
+                 });
               }
             }
           );
