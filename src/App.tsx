@@ -448,7 +448,7 @@ export default function App() {
     if (api.isUsingSupabase()) {
       try {
         setIsLoading(true);
-        const url = await api.profile.uploadAvatar(file);
+        const url = await api.profile.uploadImage(file, 'avatars');
         setEditedAvatar(url);
         showNotification("Avatar uploaded successfully!", "success");
       } catch (err: any) {
@@ -531,6 +531,16 @@ export default function App() {
       await api.profile.update({ theme: mergedTheme });
     } catch (err: any) {
       showNotification("Could not sync visual theme options.", "error");
+    }
+  };
+
+  const handleProfilePropertyChange = async (updates: Partial<Profile>) => {
+    if (!profile) return;
+    try {
+      setProfile({ ...profile, ...updates });
+      await api.profile.update(updates);
+    } catch (err: any) {
+      showNotification("Could not sync profile settings.", "error");
     }
   };
 
@@ -676,7 +686,17 @@ export default function App() {
           ? publicViewData.profile.theme.backgroundColor 
           : profile 
             ? profile.theme.backgroundColor 
-            : "#0A0A0A"
+            : "#0A0A0A",
+        backgroundImage: currentScreen === "public" && publicViewData?.profile.theme.backgroundImage 
+          ? `url(${publicViewData.profile.theme.backgroundImage})`
+          : profile?.theme.backgroundImage
+            ? `url(${profile.theme.backgroundImage})`
+            : "none",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        fontFamily: currentScreen === "public" && publicViewData?.profile.theme.fontFamily
+          ? publicViewData.profile.theme.fontFamily
+          : profile?.theme.fontFamily || "'Inter', sans-serif"
       }}
     >
       {/* Initial load overlay */}
@@ -1342,7 +1362,10 @@ export default function App() {
                   </div>
                   <ThemeSelector
                     theme={profile.theme}
+                    profile={profile}
                     onChange={handleThemeChange}
+                    onProfileChange={handleProfilePropertyChange}
+                    onUploadImage={api.profile.uploadImage}
                   />
                 </section>
               )}
@@ -1396,10 +1419,17 @@ export default function App() {
                 </div>
 
                 {/* Main scrollable body wrapper of preview details */}
-                <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth space-y-6 pt-1">
+                <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth space-y-6 pt-1 pb-4 relative">
                   
+                  {profile.cover_image && (
+                    <div className="absolute top-0 left-0 w-full h-32 opacity-50 shrink-0 pointer-events-none rounded-t-xl overflow-hidden">
+                      <img src={profile.cover_image} className="w-full h-full object-cover" alt="Cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 to-transparent" />
+                    </div>
+                  )}
+
                   {/* Dynamic 3D Card tilt previews */}
-                  <div className="shrink-0">
+                  <div className="shrink-0 relative z-10 pt-4">
                     <NfcCard3D
                       displayName={editedDisplayName}
                       bio={editedBio}
@@ -1427,21 +1457,25 @@ export default function App() {
                         No active connections configured.
                       </div>
                     ) : (
-                      links.filter(l => l.is_active).map((link) => (
-                        <div 
-                          key={link.id}
-                          className="w-full py-3 bg-white/5 border border-white/10 rounded-xl flex items-center px-4 gap-3 text-left hover:bg-white/10 transition-colors"
-                        >
-                          <div className="w-7 h-7 rounded bg-black flex items-center justify-center shrink-0">
-                            {/* Standard fallback badge indicator mapping icon */}
-                            <span className="text-[10px] uppercase font-mono text-amber-500">{link.icon.substring(0,3)}</span>
+                      links.filter(l => l.is_active).map((link) => {
+                        const iconObj = AVAILABLE_ICONS.find(i => i.id === link.icon);
+                        const IconComp = iconObj ? iconObj.icon : null;
+                        const iconColor = profile.icon_style === 'colored' ? (iconObj?.color || profile.theme.primaryColor) : profile.theme.primaryColor;
+                        return (
+                          <div 
+                            key={link.id}
+                            className="w-full py-3 bg-white/5 border border-white/10 rounded-xl flex items-center px-4 gap-3 text-left hover:bg-white/10 transition-colors"
+                          >
+                            <div className="w-7 h-7 rounded bg-black flex items-center justify-center shrink-0">
+                              {IconComp ? <IconComp className="w-3.5 h-3.5" style={{ color: iconColor }} /> : <span className="text-[10px] uppercase font-mono" style={{ color: iconColor }}>{link.icon.substring(0,3)}</span>}
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-white text-xs font-semibold truncate leading-tight">{link.title}</span>
+                              <span className="text-[9px] text-neutral-500 truncate font-mono mt-0.5">{link.url.replace(/^https?:\/\//, "")}</span>
+                            </div>
                           </div>
-                          <div className="flex flex-col min-w-0">
-                            <span className="text-white text-xs font-semibold truncate leading-tight">{link.title}</span>
-                            <span className="text-[9px] text-neutral-500 truncate font-mono mt-0.5">{link.url.replace(/^https?:\/\//, "")}</span>
-                          </div>
-                        </div>
-                      ))
+                        )
+                      })
                     )}
                   </div>
 
@@ -1486,10 +1520,19 @@ export default function App() {
             <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-zinc-950 rounded-full blur-[140px]" />
           </div>
 
-          <div className="w-full max-w-sm space-y-8 text-center relative z-10 py-12">
+          <div className="w-full max-w-sm text-center relative z-10 pb-12 w-full">
+            {publicViewData.profile.cover_image && (
+              <div 
+                className="w-full h-32 md:h-48 rounded-t-3xl -mx-6 md:-mx-0 md:rounded-3xl mb-8 border border-white/5 opacity-80 shrink-0 shadow-xl overflow-hidden relative"
+              >
+                <img src={publicViewData.profile.cover_image} className="w-full h-full object-cover" alt="Cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+              </div>
+            )}
             
-            {/* Quick Home action for evaluation review */}
-            <div className="flex justify-between items-center mb-2 px-1">
+            <div className="space-y-8 mt-4 md:mt-0">
+              {/* Quick Home action for evaluation review */}
+              <div className="flex justify-between items-center mb-2 px-1">
               <button
                 type="button"
                 onClick={() => {
@@ -1541,6 +1584,7 @@ export default function App() {
                 publicViewData.links.map((link) => {
                   const iconObj = AVAILABLE_ICONS.find(i => i.id === link.icon);
                   const IconComp = iconObj ? iconObj.icon : null;
+                  const iconColor = publicViewData.profile.icon_style === 'colored' ? (iconObj?.color || publicViewData.profile.theme.primaryColor) : publicViewData.profile.theme.primaryColor;
                   return (
                     <a
                       key={link.id}
@@ -1551,7 +1595,7 @@ export default function App() {
                     >
                       <div className="flex items-center gap-3.5 min-w-0">
                         <div className="w-8 h-8 rounded-lg bg-black/60 flex items-center justify-center shrink-0">
-                          {IconComp ? <IconComp className="w-4 h-4 text-amber-400" /> : <span className="text-[11px] uppercase font-mono text-amber-400">{link.icon.substring(0,3)}</span>}
+                          {IconComp ? <IconComp className="w-4 h-4" style={{ color: iconColor }} /> : <span className="text-[11px] uppercase font-mono" style={{ color: iconColor }}>{link.icon.substring(0,3)}</span>}
                         </div>
                         <div className="flex flex-col min-w-0">
                           <span className="text-white text-sm font-semibold truncate leading-snug">{link.title}</span>
@@ -1580,6 +1624,7 @@ export default function App() {
             <p className="text-[10px] text-zinc-600 font-mono pt-8">
               POWERED BY CHIPNG NFC HARDWARE NETWORKS
             </p>
+            </div>
 
           </div>
         </div>

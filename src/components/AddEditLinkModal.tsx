@@ -24,19 +24,19 @@ interface AddEditLinkModalProps {
   editingLink: LinkItem | null;
 }
 
-const AVAILABLE_ICONS = [
-  { id: "twitter", name: "Twitter / X", icon: Twitter },
-  { id: "instagram", name: "Instagram", icon: Instagram },
-  { id: "linkedin", name: "LinkedIn", icon: Linkedin },
-  { id: "github", name: "GitHub", icon: Github },
-  { id: "youtube", name: "YouTube", icon: Youtube },
-  { id: "globe", name: "Website/Portfolio", icon: Globe },
-  { id: "mail", name: "Email", icon: Mail },
-  { id: "phone", name: "Phone/vCard Cell", icon: Phone },
-  { id: "whatsapp", name: "WhatsApp Chat", icon: MessageSquare },
-  { id: "location", name: "HQ Address", icon: MapPin },
-  { id: "sublink", name: "Affiliate Link", icon: Bookmark },
-  { id: "generic", name: "Custom Link", icon: Link2 }
+export const AVAILABLE_ICONS = [
+  { id: "twitter", name: "Twitter / X", icon: Twitter, color: "#1DA1F2" },
+  { id: "instagram", name: "Instagram", icon: Instagram, color: "#E1306C" },
+  { id: "linkedin", name: "LinkedIn", icon: Linkedin, color: "#0077B5" },
+  { id: "github", name: "GitHub", icon: Github, color: "#ffffff" },
+  { id: "youtube", name: "YouTube", icon: Youtube, color: "#FF0000" },
+  { id: "globe", name: "Website/Portfolio", icon: Globe, color: "#3B82F6" },
+  { id: "mail", name: "Email", icon: Mail, color: "#EF4444" },
+  { id: "phone", name: "Phone/vCard Cell", icon: Phone, color: "#10B981" },
+  { id: "whatsapp", name: "WhatsApp Chat", icon: MessageSquare, color: "#25D366" },
+  { id: "location", name: "HQ Address", icon: MapPin, color: "#EC4899" },
+  { id: "sublink", name: "Affiliate Link", icon: Bookmark, color: "#F59E0B" },
+  { id: "generic", name: "Custom Link", icon: Link2, color: "#9CA3AF" }
 ];
 
 export default function AddEditLinkModal({
@@ -237,4 +237,3 @@ export default function AddEditLinkModal({
     </div>
   );
 }
-export { AVAILABLE_ICONS };

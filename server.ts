@@ -269,7 +269,7 @@ app.put("/api/profile", (req, res) => {
     return res.status(401).json({ error: "Unauthorized access." });
   }
 
-  const { display_name, bio, avatar_url, theme, nfc_data, username } = req.body;
+  const { display_name, bio, avatar_url, theme, nfc_data, username, cover_image, icon_style } = req.body;
   const db = readDB();
   const profileIndex = db.profiles.findIndex(p => p.id === userId);
 
@@ -298,6 +298,8 @@ app.put("/api/profile", (req, res) => {
   if (display_name !== undefined) oldProfile.display_name = display_name;
   if (bio !== undefined) oldProfile.bio = bio;
   if (avatar_url !== undefined) oldProfile.avatar_url = avatar_url;
+  if (cover_image !== undefined) oldProfile.cover_image = cover_image;
+  if (icon_style !== undefined) oldProfile.icon_style = icon_style;
   if (theme !== undefined) oldProfile.theme = { ...oldProfile.theme, ...theme };
   if (nfc_data !== undefined) oldProfile.nfc_data = { ...oldProfile.nfc_data, ...nfc_data };
 

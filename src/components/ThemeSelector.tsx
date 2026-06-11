@@ -1,10 +1,13 @@
-import React from "react";
-import { ThemeConfig } from "../types";
-import { Palette, Check, LayoutGrid, Sparkles } from "lucide-react";
+import React, { useState } from "react";
+import { ThemeConfig, Profile } from "../types";
+import { Palette, Check, LayoutGrid, Sparkles, Image as ImageIcon, Type, Diamond, Upload } from "lucide-react";
 
 interface ThemeSelectorProps {
   theme: ThemeConfig;
+  profile: Profile;
   onChange: (theme: Partial<ThemeConfig>) => void;
+  onProfileChange: (updates: Partial<Profile>) => void;
+  onUploadImage: (file: File, bucket: string) => Promise<string>;
 }
 
 const PRESET_COLORS = [
@@ -24,9 +27,163 @@ const CARD_STYLES = [
   { id: "gold-foil", name: "Gold Foil", desc: "Premium textured physical metallic finish" }
 ];
 
-export default function ThemeSelector({ theme, onChange }: ThemeSelectorProps) {
+const FONTS = [
+  { id: "'Inter', sans-serif", name: "Inter", desc: "Clean & Modern" },
+  { id: "'Space Grotesk', sans-serif", name: "Space Grotesk", desc: "Tech & Geometric" },
+  { id: "'JetBrains Mono', monospace", name: "JetBrains Mono", desc: "Developer & Code" },
+  { id: "'Playfair Display', serif", name: "Playfair Display", desc: "Editorial & Elegant" }
+];
+
+const ICON_STYLES = [
+  { id: "colored", name: "Colored", desc: "Vibrant branded colors" },
+  { id: "monochrome", name: "Monochrome", desc: "Minimalist matching theme" }
+];
+
+export default function ThemeSelector({ theme, profile, onChange, onProfileChange, onUploadImage }: ThemeSelectorProps) {
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingBg, setUploadingBg] = useState(false);
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setUploadingCover(true);
+      const url = await onUploadImage(file, 'covers');
+      onProfileChange({ cover_image: url });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUploadingCover(false);
+    }
+  };
+
+  const handleBgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setUploadingBg(true);
+      const url = await onUploadImage(file, 'backgrounds');
+      onChange({ backgroundImage: url });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUploadingBg(false);
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Cover Image & Background Image */}
+      <div className="space-y-4">
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-2 flex items-center gap-2">
+            <ImageIcon className="w-4 h-4 text-neutral-300" />
+            Cover Image
+          </label>
+          <div className="flex items-center gap-4">
+            {profile.cover_image && (
+              <img src={profile.cover_image} alt="Cover" className="w-24 h-12 object-cover rounded-md border border-white/10" />
+            )}
+            <label className="cursor-pointer px-4 py-2 bg-white/5 border border-white/10 hover:bg-white/10 rounded-md text-xs font-medium text-white transition-all flex items-center gap-2">
+              <Upload className="w-3.5 h-3.5" />
+              {uploadingCover ? "Uploading..." : "Upload Cover"}
+              <input type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} disabled={uploadingCover} />
+            </label>
+            {profile.cover_image && (
+              <button 
+                type="button" 
+                onClick={() => onProfileChange({ cover_image: null })}
+                className="text-xs text-red-400 hover:text-red-300 transition-colors"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div>
+           <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-2 flex items-center gap-2">
+            <ImageIcon className="w-4 h-4 text-neutral-300" />
+            Background Image
+          </label>
+          <div className="flex items-center gap-4">
+            {theme.backgroundImage && (
+              <img src={theme.backgroundImage} alt="Background" className="w-16 h-16 object-cover rounded-md border border-white/10" />
+            )}
+            <label className="cursor-pointer px-4 py-2 bg-white/5 border border-white/10 hover:bg-white/10 rounded-md text-xs font-medium text-white transition-all flex items-center gap-2">
+              <Upload className="w-3.5 h-3.5" />
+              {uploadingBg ? "Uploading..." : "Upload Background"}
+              <input type="file" accept="image/*" className="hidden" onChange={handleBgUpload} disabled={uploadingBg} />
+            </label>
+            {theme.backgroundImage && (
+              <button 
+                type="button" 
+                onClick={() => onChange({ backgroundImage: undefined })}
+                className="text-xs text-red-400 hover:text-red-300 transition-colors"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Typography / Font Selector */}
+      <div>
+        <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-3 flex items-center gap-2">
+          <Type className="w-4 h-4 text-neutral-300" />
+          Typography
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          {FONTS.map(font => {
+            const isSelected = theme.fontFamily === font.id || (!theme.fontFamily && font.id.includes('Inter'));
+            return (
+              <button
+                key={font.id}
+                type="button"
+                onClick={() => onChange({ fontFamily: font.id })}
+                className={`p-3 rounded-lg border text-left transition-all ${
+                  isSelected ? "border-amber-500 bg-amber-500/5 shadow-md" : "border-white/5 bg-black/40 hover:bg-black/60"
+                }`}
+              >
+                <span className={`block text-sm font-semibold ${isSelected ? 'text-amber-400' : 'text-white'}`} style={{ fontFamily: font.id }}>
+                  {font.name}
+                </span>
+                <span className="text-[10px] text-neutral-400 mt-1 block">{font.desc}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Icon Style Selector */}
+      <div>
+        <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-3 flex items-center gap-2">
+          <Diamond className="w-4 h-4 text-neutral-300" />
+          Icon Style
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          {ICON_STYLES.map(style => {
+            const isSelected = profile.icon_style === style.id || (!profile.icon_style && style.id === 'monochrome');
+            return (
+              <button
+                key={style.id}
+                type="button"
+                onClick={() => onProfileChange({ icon_style: style.id })}
+                className={`p-3 rounded-lg border text-left transition-all ${
+                  isSelected ? "border-amber-500 bg-amber-500/5 shadow-md" : "border-white/5 bg-black/40 hover:bg-black/60"
+                }`}
+              >
+                <span className={`block text-sm font-semibold ${isSelected ? 'text-amber-400' : 'text-white'}`}>
+                  {style.name}
+                </span>
+                <span className="text-[10px] text-neutral-400 mt-1 block">{style.desc}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
       {/* Visual Presets Selector */}
       <div>
         <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-3 flex items-center gap-2">

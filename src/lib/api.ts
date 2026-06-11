@@ -258,7 +258,7 @@ export const api = {
       }
     },
 
-    uploadAvatar: async (file: File): Promise<string> => {
+    uploadImage: async (file: File, bucket: string): Promise<string> => {
       if (isSupabaseConfigured && supabase) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("Unauthenticated");
@@ -268,17 +268,17 @@ export const api = {
         const filePath = `${user.id}/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
-          .from('avatars')
+          .from(bucket)
           .upload(filePath, file);
 
         if (uploadError) {
           throw uploadError;
         }
 
-        const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+        const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
         return data.publicUrl;
       } else {
-        throw new Error("Avatar upload is only supported with Supabase configured.");
+        throw new Error("Image upload is only supported with Supabase configured.");
       }
     },
 

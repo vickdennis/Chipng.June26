@@ -1,6 +1,8 @@
 export interface ThemeConfig {
   primaryColor: string;
   backgroundColor: string;
+  backgroundImage?: string;
+  fontFamily?: string;
   cardStyle: 'glassmorphism' | 'modern' | 'cyberpunk' | 'neo-brutalism' | 'gold-foil';
   textColor: string;
 }
