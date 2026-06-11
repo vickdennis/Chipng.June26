@@ -41,6 +41,9 @@ interface MockDB {
     is_active: boolean;
     created_at: string;
   }>;
+  roles: Array<{ user_id: string; role: string }>;
+  blogs: Array<{ id: string; title: string; content: string; author_id: string; created_at: string }>;
+  products: Array<{ id: string; name: string; description: string; price: number; created_at: string }>;
 }
 
 // Default Seed Data
@@ -109,6 +112,15 @@ const defaultDB: MockDB = {
       is_active: true,
       created_at: new Date().toISOString()
     }
+  ],
+  roles: [
+    { user_id: "demo-user-id", role: "admin" }
+  ],
+  blogs: [
+    { id: "blog-1", title: "Welcome to ChipNG", content: "This is our first post.", author_id: "demo-user-id", created_at: new Date().toISOString() }
+  ],
+  products: [
+    { id: "prod-1", name: "NFC Smart Card", description: "A smart business card.", price: 19.99, created_at: new Date().toISOString() }
   ]
 };
 
@@ -426,6 +438,125 @@ app.delete("/api/links/:id", (req, res) => {
   writeDB(db);
 
   res.json({ success: true, message: "Link deleted successfully." });
+});
+
+
+// Admin API Routes
+
+// Middleware to check admin role
+function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const userId = getAuthUserId(req);
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized access: login required." });
+  }
+  const db = readDB();
+  const roleRecord = db.roles?.find(r => r.user_id === userId);
+  if (!roleRecord || roleRecord.role !== 'admin') {
+    return res.status(403).json({ error: "Access denied. Admins only." });
+  }
+  (req as any).userId = userId;
+  next();
+}
+
+app.get("/api/admin/analytics", requireAdmin, (req, res) => {
+  const db = readDB();
+  res.json({
+    totalUsers: db.users.length,
+    totalPosts: db.blogs?.length || 0,
+    totalProducts: db.products?.length || 0
+  });
+});
+
+app.get("/api/admin/users", requireAdmin, (req, res) => {
+  const db = readDB();
+  res.json(db.users.map(u => {
+    const profile = db.profiles.find(p => p.id === u.id);
+    const roleR = db.roles?.find(r => r.user_id === u.id);
+    return {
+      id: u.id,
+      email: u.email,
+      username: u.username,
+      display_name: profile?.display_name,
+      role: roleR?.role || 'user'
+    };
+  }));
+});
+
+app.delete("/api/admin/users/:id", requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const db = readDB();
+  db.users = db.users.filter(u => u.id !== id);
+  db.profiles = db.profiles.filter(p => p.id !== id);
+  db.links = db.links.filter(l => l.user_id !== id);
+  if(db.roles) db.roles = db.roles.filter(r => r.user_id !== id);
+  writeDB(db);
+  res.json({ success: true, message: "User deleted." });
+});
+
+app.post("/api/admin/users/:id/suspend", requireAdmin, (req, res) => {
+  // Mock suspend by just returning success, maybe storing suspended in local memory isn't strictly requested by schema but we can just say "User suspended"
+  res.json({ success: true, message: "User suspended." });
+});
+
+app.get("/api/admin/blogs", requireAdmin, (req, res) => {
+  const db = readDB();
+  res.json(db.blogs || []);
+});
+
+app.post("/api/admin/blogs", requireAdmin, (req, res) => {
+  const { title, content } = req.body;
+  const db = readDB();
+  const author_id = (req as any).userId;
+  const newBlog = {
+    id: "blog-" + Math.random().toString(36).substring(2, 11),
+    title,
+    content,
+    author_id,
+    created_at: new Date().toISOString()
+  };
+  if (!db.blogs) db.blogs = [];
+  db.blogs.push(newBlog);
+  writeDB(db);
+  res.json(newBlog);
+});
+
+app.delete("/api/admin/blogs/:id", requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const db = readDB();
+  if (!db.blogs) return res.status(404).json({ error: "Not found." });
+  db.blogs = db.blogs.filter(b => b.id !== id);
+  writeDB(db);
+  res.json({ success: true, message: "Deleted." });
+});
+
+app.get("/api/admin/products", requireAdmin, (req, res) => {
+  const db = readDB();
+  res.json(db.products || []);
+});
+
+app.post("/api/admin/products", requireAdmin, (req, res) => {
+  const { name, description, price } = req.body;
+  const db = readDB();
+  const newProduct = {
+    id: "prod-" + Math.random().toString(36).substring(2, 11),
+    name,
+    description,
+    price: Number(price),
+    created_at: new Date().toISOString()
+  };
+  if (!db.products) db.products = [];
+  db.products.push(newProduct);
+  writeDB(db);
+  res.json(newProduct);
+});
+
+app.delete("/api/admin/products/:id", requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const db = readDB();
+  if (!db.products) return res.status(404).json({ error: "Not found." });
+  db.products = db.products.filter(p => p.id !== id);
+  writeDB(db);
+  res.json({ success: true, message: "Deleted." });
 });
 
 

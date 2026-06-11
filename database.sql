@@ -21,6 +21,77 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- Index for username lookup
 CREATE UNIQUE INDEX IF NOT EXISTS profiles_username_idx ON public.profiles(username);
 
+-- Roles Table
+CREATE TABLE IF NOT EXISTS public.roles (
+    user_id UUID PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    role VARCHAR(50) DEFAULT 'user' NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Enable RLS and add policies for roles
+ALTER TABLE public.roles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view their own role"
+ON public.roles FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Admins can view and manage all roles"
+ON public.roles FOR ALL USING (
+    EXISTS (
+        SELECT 1 FROM public.roles r2 WHERE r2.user_id = auth.uid() AND r2.role = 'admin'
+    )
+) WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM public.roles r2 WHERE r2.user_id = auth.uid() AND r2.role = 'admin'
+    )
+);
+
+-- Blogs/Posts Table
+CREATE TABLE IF NOT EXISTS public.blogs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title TEXT NOT NULL,
+    content TEXT,
+    author_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.blogs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read access for blogs"
+ON public.blogs FOR SELECT USING (true);
+
+CREATE POLICY "Admins can manage blogs"
+ON public.blogs FOR ALL USING (
+    EXISTS (
+        SELECT 1 FROM public.roles r WHERE r.user_id = auth.uid() AND r.role = 'admin'
+    )
+) WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM public.roles r WHERE r.user_id = auth.uid() AND r.role = 'admin'
+    )
+);
+
+-- Products Table
+CREATE TABLE IF NOT EXISTS public.products (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL,
+    description TEXT,
+    price DECIMAL(10, 2) DEFAULT 0.00 NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read access for products"
+ON public.products FOR SELECT USING (true);
+
+CREATE POLICY "Admins can manage products"
+ON public.products FOR ALL USING (
+    EXISTS (
+        SELECT 1 FROM public.roles r WHERE r.user_id = auth.uid() AND r.role = 'admin'
+    )
+) WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM public.roles r WHERE r.user_id = auth.uid() AND r.role = 'admin'
+    )
+);
+
 -- 2. Table: links
 CREATE TABLE IF NOT EXISTS public.links (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

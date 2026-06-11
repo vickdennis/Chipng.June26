@@ -6,6 +6,7 @@ import ThemeSelector from "./components/ThemeSelector";
 import LinkListManager from "./components/LinkListManager";
 import AddEditLinkModal from "./components/AddEditLinkModal";
 import NfcTagSettings from "./components/NfcTagSettings";
+import AdminPanel from "./components/AdminPanel";
 import { supabase } from "./supabaseClient.js";
 import { 
   Wifi, 
@@ -51,7 +52,7 @@ export const ChipLogo = ({ className = "w-8 h-8" }: { className?: string }) => (
 
 export default function App() {
   // Navigation & Screen Control states
-  const [currentScreen, setCurrentScreen] = useState<"landing" | "auth" | "dashboard" | "public" | "not_found">("landing");
+  const [currentScreen, setCurrentScreen] = useState<"landing" | "auth" | "dashboard" | "public" | "not_found" | "admin">("landing");
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);
   const [authMode, setAuthMode] = useState<"login" | "signup" | "forgot_password" | "update_password">("login");
@@ -103,7 +104,7 @@ export default function App() {
       
       const rawPath = window.location.pathname.replace(/^\//, "").trim();
       const path = decodeURIComponent(rawPath.split("/")[0]).trim();
-      const isPublicProfilePath = path && !["dashboard", "auth", "login", "register", "index.html"].includes(path);
+      const isPublicProfilePath = path && !["dashboard", "auth", "login", "register", "admin", "index.html"].includes(path);
 
       let user = null;
       if (api.isUsingSupabase() && supabase) {
@@ -171,6 +172,20 @@ export default function App() {
 
       if (isPublicProfilePath) {
         await loadPublicProfile(path);
+      } else if (path === "admin") {
+         if (!user) {
+            window.history.replaceState({}, '', '/login');
+            setAuthMode("login");
+            setCurrentScreen("auth");
+         } else {
+            const isAdmin = await api.admin.checkIsAdmin();
+            if (isAdmin) {
+               setCurrentScreen("admin");
+            } else {
+               window.history.replaceState({}, '', "/dashboard");
+               setCurrentScreen("dashboard");
+            }
+         }
       } else if (user) {
         // If recovery mode is active, do not force dashboard
         if (authMode !== 'update_password') {
@@ -217,6 +232,8 @@ export default function App() {
       document.title = "Initialize Secure Card | ChipNG Smart Profiles";
     } else if (currentScreen === "not_found") {
       document.title = "Profile Not Found | ChipNG";
+    } else if (currentScreen === "admin") {
+      document.title = "Admin Panel | ChipNG";
     } else if (currentScreen === "public" && publicViewData) {
       const p = publicViewData.profile;
       document.title = `${p.display_name || p.username} — Contactless NFC Profile | ChipNG`;
@@ -669,6 +686,10 @@ export default function App() {
     link.click();
     document.body.removeChild(link);
   };
+
+  if (currentScreen === "admin") {
+    return <AdminPanel />;
+  }
 
   return (
     <div 

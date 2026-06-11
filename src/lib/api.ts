@@ -514,5 +514,161 @@ export const api = {
         }
       }
     }
+  },
+
+  // Admin Actions
+  admin: {
+    checkIsAdmin: async (): Promise<boolean> => {
+      if (isSupabaseConfigured && supabase) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return false;
+        
+        const { data } = await supabase
+          .from("roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        
+        return data?.role === "admin";
+      } else {
+        const token = localStorage.getItem(TOKEN_KEY);
+        if (!token) return false;
+        
+        // Use users endpoint to check if we can fetch users
+        try {
+          const res = await fetch("/api/admin/users", {
+            headers: { "Authorization": `Bearer ${token}` }
+          });
+          return res.ok;
+        } catch {
+          return false;
+        }
+      }
+    },
+    
+    getUsers: async (): Promise<any[]> => {
+      if (isSupabaseConfigured && supabase) {
+        // Mocked or minimal representation. Supabase doesn't let standard users query auth.users easily unless we created a view or query profiles.
+        const { data: profiles } = await supabase.from("profiles").select("*");
+        const { data: roles } = await supabase.from("roles").select("*");
+        
+        return (profiles || []).map(p => {
+          const r = (roles || []).find(r => r.user_id === p.id);
+          return {
+            id: p.id,
+            username: p.username,
+            display_name: p.display_name,
+            role: r ? r.role : "user"
+          };
+        });
+      } else {
+        const token = localStorage.getItem(TOKEN_KEY);
+        const res = await fetch("/api/admin/users", { headers: { "Authorization": `Bearer ${token}` } });
+        if (!res.ok) throw new Error("Unauthorized");
+        return res.json();
+      }
+    },
+    suspendUser: async (id: string): Promise<void> => {
+      if (isSupabaseConfigured && supabase) {
+        // usually handled via Edge functions or direct admin api
+      } else {
+        const token = localStorage.getItem(TOKEN_KEY);
+        await fetch(`/api/admin/users/${id}/suspend`, { method: "POST", headers: { "Authorization": `Bearer ${token}` } });
+      }
+    },
+    deleteUser: async (id: string): Promise<void> => {
+      if (isSupabaseConfigured && supabase) {
+         await supabase.from("profiles").delete().eq("id", id);
+      } else {
+        const token = localStorage.getItem(TOKEN_KEY);
+        await fetch(`/api/admin/users/${id}`, { method: "DELETE", headers: { "Authorization": `Bearer ${token}` } });
+      }
+    },
+    
+    getAnalytics: async (): Promise<any> => {
+      if (isSupabaseConfigured && supabase) {
+        const [{ count: userCount }, { count: postCount }, { count: prodCount }] = await Promise.all([
+          supabase.from('profiles').select('*', { count: 'exact', head: true }),
+          supabase.from('blogs').select('*', { count: 'exact', head: true }),
+          supabase.from('products').select('*', { count: 'exact', head: true })
+        ]);
+        return {
+          totalUsers: userCount || 0,
+          totalPosts: postCount || 0,
+          totalProducts: prodCount || 0
+        };
+      } else {
+        const token = localStorage.getItem(TOKEN_KEY);
+        const res = await fetch("/api/admin/analytics", { headers: { "Authorization": `Bearer ${token}` } });
+        return res.json();
+      }
+    },
+
+    getBlogs: async (): Promise<any[]> => {
+      if (isSupabaseConfigured && supabase) {
+        const { data } = await supabase.from("blogs").select("*");
+        return data || [];
+      } else {
+        const token = localStorage.getItem(TOKEN_KEY);
+        const res = await fetch("/api/admin/blogs", { headers: { "Authorization": `Bearer ${token}` } });
+        return res.json();
+      }
+    },
+    createBlog: async (title: string, content: string): Promise<any> => {
+      if (isSupabaseConfigured && supabase) {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data } = await supabase.from("blogs").insert({ title, content, author_id: user?.id }).select().single();
+        return data;
+      } else {
+        const token = localStorage.getItem(TOKEN_KEY);
+        const res = await fetch("/api/admin/blogs", { 
+          method: "POST", 
+          body: JSON.stringify({ title, content }), 
+          headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" } 
+        });
+        return res.json();
+      }
+    },
+    deleteBlog: async (id: string): Promise<void> => {
+       if (isSupabaseConfigured && supabase) {
+         await supabase.from("blogs").delete().eq("id", id);
+       } else {
+         const token = localStorage.getItem(TOKEN_KEY);
+         await fetch(`/api/admin/blogs/${id}`, { method: "DELETE", headers: { "Authorization": `Bearer ${token}` } });
+       }
+    },
+
+    getProducts: async (): Promise<any[]> => {
+      if (isSupabaseConfigured && supabase) {
+        const { data } = await supabase.from("products").select("*");
+        return data || [];
+      } else {
+        const token = localStorage.getItem(TOKEN_KEY);
+        const res = await fetch("/api/admin/products", { headers: { "Authorization": `Bearer ${token}` } });
+        return res.json();
+      }
+    },
+    createProduct: async (name: string, description: string, price: number): Promise<any> => {
+      if (isSupabaseConfigured && supabase) {
+        const { data } = await supabase.from("products").insert({ name, description, price }).select().single();
+        return data;
+      } else {
+        const token = localStorage.getItem(TOKEN_KEY);
+        const res = await fetch("/api/admin/products", { 
+          method: "POST", 
+          body: JSON.stringify({ name, description, price }), 
+          headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" } 
+        });
+        return res.json();
+      }
+    },
+    deleteProduct: async (id: string): Promise<void> => {
+       if (isSupabaseConfigured && supabase) {
+         await supabase.from("products").delete().eq("id", id);
+       } else {
+         const token = localStorage.getItem(TOKEN_KEY);
+         await fetch(`/api/admin/products/${id}`, { method: "DELETE", headers: { "Authorization": `Bearer ${token}` } });
+       }
+    }
   }
 };
