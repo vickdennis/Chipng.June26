@@ -372,18 +372,14 @@ export default function App() {
           return;
         }
 
-        const { data, error } = await supabase!.auth.signUp({
-          email: emailInput,
-          password: passwordInput,
-          options: {
-            data: {
-              display_name: displayNameInput || usernameInput,
-              username: usernameInput.toLowerCase().trim()
-            }
-          }
-        });
-
-        if (error) {
+        try {
+          await api.auth.signUp(
+            emailInput,
+            passwordInput,
+            usernameInput,
+            displayNameInput || usernameInput
+          );
+        } catch (error: any) {
           setAuthError(error.message);
           setIsLoading(false);
           return;
@@ -398,30 +394,14 @@ export default function App() {
         setIsLoading(false);
         return;
       } else {
-        const { data, error } = await supabase!.auth.signInWithPassword({
-          email: emailInput,
-          password: passwordInput,
-        });
-
-        if (error) {
+        try {
+          const session = await api.auth.signIn(emailInput, passwordInput);
+          setCurrentUser(session.user);
+          showNotification("Welcome back! Redirecting to home...", "success");
+        } catch (error: any) {
            setAuthError(error.message);
            setIsLoading(false);
            return;
-        }
-
-        if (!data.session) {
-           setAuthError("Session could not be established. Please try again.");
-           setIsLoading(false);
-           return;
-        }
-
-        if (data.user) {
-          setCurrentUser({
-            id: data.user.id,
-            email: data.user.email || emailInput,
-            username: emailInput.split("@")[0] // Just fallback, loadUserData will fetch real profile
-          });
-          showNotification("Welcome back! Redirecting to home...", "success");
         }
       }
       
