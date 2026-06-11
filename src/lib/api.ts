@@ -217,7 +217,19 @@ export const api = {
             .maybeSingle();
 
           if (data) {
-            return data as Profile;
+            return {
+              ...data,
+              theme: data.theme || {
+                primaryColor: "#6366f1",
+                backgroundColor: "#0f172a",
+                cardStyle: "glassmorphism",
+                textColor: "#ffffff"
+              },
+              nfc_data: data.nfc_data || {
+                serialNumber: null,
+                activationStatus: "pending"
+              }
+            } as Profile;
           }
           if (error) {
             lastErrorMsg = error.message;
@@ -335,6 +347,20 @@ export const api = {
 
         if (profileErr) throw new Error("Profile not found.");
 
+        const robustProfile = {
+          ...profile,
+          theme: profile.theme || {
+            primaryColor: "#6366f1",
+            backgroundColor: "#0f172a",
+            cardStyle: "glassmorphism",
+            textColor: "#ffffff"
+          },
+          nfc_data: profile.nfc_data || {
+            serialNumber: null,
+            activationStatus: "pending"
+          }
+        };
+
         const { data: links, error: linksErr } = await supabase
           .from("links")
           .select("*")
@@ -345,7 +371,7 @@ export const api = {
         if (linksErr) throw new Error("Failed to load associated card links.");
 
         return {
-          profile: profile as Profile,
+          profile: robustProfile as Profile,
           links: links as LinkItem[]
         };
       } else {

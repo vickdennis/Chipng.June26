@@ -4,7 +4,7 @@ import { Profile, LinkItem, UserSession, ThemeConfig, NfcData } from "./types";
 import NfcCard3D from "./components/NfcCard3D";
 import ThemeSelector from "./components/ThemeSelector";
 import LinkListManager from "./components/LinkListManager";
-import AddEditLinkModal from "./components/AddEditLinkModal";
+import AddEditLinkModal, { AVAILABLE_ICONS } from "./components/AddEditLinkModal";
 import NfcTagSettings from "./components/NfcTagSettings";
 import AdminPanel from "./components/AdminPanel";
 import { supabase } from "./supabaseClient.js";
@@ -1538,26 +1538,30 @@ export default function App() {
                   This user has not established any active subfield connection mappings.
                 </div>
               ) : (
-                publicViewData.links.map((link) => (
-                  <a
-                    key={link.id}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full p-4 bg-white/5 border border-white/10 hover:border-white/20 hover:scale-[1.01] rounded-2xl flex items-center justify-between transition-all text-left group"
-                  >
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      <div className="w-8 h-8 rounded-lg bg-black/60 flex items-center justify-center shrink-0">
-                        <span className="text-[11px] uppercase font-mono text-amber-400">{link.icon.substring(0,3)}</span>
+                publicViewData.links.map((link) => {
+                  const iconObj = AVAILABLE_ICONS.find(i => i.id === link.icon);
+                  const IconComp = iconObj ? iconObj.icon : null;
+                  return (
+                    <a
+                      key={link.id}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full p-4 bg-white/5 border border-white/10 hover:border-white/20 hover:scale-[1.01] rounded-2xl flex items-center justify-between transition-all text-left group"
+                    >
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-black/60 flex items-center justify-center shrink-0">
+                          {IconComp ? <IconComp className="w-4 h-4 text-amber-400" /> : <span className="text-[11px] uppercase font-mono text-amber-400">{link.icon.substring(0,3)}</span>}
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-white text-sm font-semibold truncate leading-snug">{link.title}</span>
+                          <span className="text-[10px] text-zinc-500 truncate">{link.url.replace(/^https?:\/\//, "")}</span>
+                        </div>
                       </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-white text-sm font-semibold truncate leading-snug">{link.title}</span>
-                        <span className="text-[10px] text-zinc-500 truncate">{link.url.replace(/^https?:\/\//, "")}</span>
-                      </div>
-                    </div>
-                    <ExternalLink className="w-4 h-4 text-neutral-500 group-hover:text-white transition-colors shrink-0" />
-                  </a>
-                ))
+                      <ExternalLink className="w-4 h-4 text-neutral-500 group-hover:text-white transition-colors shrink-0" />
+                    </a>
+                  );
+                })
               )}
             </div>
 
