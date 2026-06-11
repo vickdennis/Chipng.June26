@@ -157,16 +157,9 @@ export default function App() {
       if (user) {
         setCurrentUser(user);
         // Load user data in background or foreground
-        try {
-          const pData = await api.profile.get();
-          setProfile(pData);
-          setEditedDisplayName(pData.display_name || "");
-          setEditedBio(pData.bio || "");
-          setEditedAvatar(pData.avatar_url || "");
-          const connections = await api.links.list();
-          setLinks(connections);
-        } catch (err) {
-          console.error("Error loading user session details:", err);
+        const success = await loadUserData();
+        if (!success) {
+           user = null; // Mark user as failed so we do not proceed to dashboard
         }
       }
 
@@ -265,7 +258,7 @@ export default function App() {
   }, [currentScreen, profile, publicViewData]);
 
   // Fetch all profiles & links for authenticated user
-  const loadUserData = async () => {
+  const loadUserData = async (): Promise<boolean> => {
     setIsLoading(true);
     try {
       const pData = await api.profile.get();
@@ -278,12 +271,14 @@ export default function App() {
 
       const connections = await api.links.list();
       setLinks(connections);
+      return true;
     } catch (err: any) {
       showNotification(err.message || "Could not retrieve user data.", "error");
       // Force exit logged in state if auth token mismatch
       api.auth.signOut();
       setCurrentUser(null);
       setCurrentScreen("landing");
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -410,11 +405,13 @@ export default function App() {
       setUsernameInput("");
       setDisplayNameInput("");
 
-      await loadUserData();
+      const success = await loadUserData();
       
-      // Redirect to Home page exactly as requested "/"
-      window.history.pushState({}, '', '/');
-      setCurrentScreen("dashboard");
+      if (success) {
+        // Redirect to Home page exactly as requested "/"
+        window.history.pushState({}, '', '/');
+        setCurrentScreen("dashboard");
+      }
     } catch (err: any) {
       setAuthError(err.message || "Failed authenticate credentials.");
     } finally {
@@ -805,17 +802,21 @@ export default function App() {
                     // Try to log in with direct demo account parameters natively
                     const session = await api.auth.signIn("demo@chipng.co", "demo123");
                     setCurrentUser(session.user);
-                    await loadUserData();
-                    setCurrentScreen("dashboard");
-                    showNotification("Logged in seamlessly as Demo Guest!", "success");
+                    const success = await loadUserData();
+                    if (success) {
+                      setCurrentScreen("dashboard");
+                      showNotification("Logged in seamlessly as Demo Guest!", "success");
+                    }
                   } catch (err) {
                     // If login failed, register demo on server first
                     try {
                       const session = await api.auth.signUp("demo@chipng.co", "demo123", "vickthor", "Victor Dennis");
                       setCurrentUser(session.user);
-                      await loadUserData();
-                      setCurrentScreen("dashboard");
-                      showNotification("Demo profile set up successfully!", "success");
+                      const success = await loadUserData();
+                      if (success) {
+                        setCurrentScreen("dashboard");
+                        showNotification("Demo profile set up successfully!", "success");
+                      }
                     } catch {
                       showNotification("Demo session database offline.", "error");
                     }
