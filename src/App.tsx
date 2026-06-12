@@ -9,6 +9,7 @@ import NfcTagSettings from "./components/NfcTagSettings";
 import PremiumLandingPage from "./components/PremiumLandingPage";
 import AdminPanel from "./components/AdminPanel";
 import { supabase } from "./supabaseClient.js";
+import { QRCodeCanvas } from "qrcode.react";
 import { 
   Wifi, 
   User, 
@@ -32,7 +33,11 @@ import {
   Info,
   Layers,
   Palette,
-  Briefcase
+  Briefcase,
+  Twitter,
+  Linkedin,
+  Instagram,
+  Github
 } from "lucide-react";
 
 export const ChipLogo = ({ className = "w-8 h-8" }: { className?: string }) => (
@@ -82,6 +87,13 @@ export default function App() {
   const [editedAvatar, setEditedAvatar] = useState("");
   const [editedUsername, setEditedUsername] = useState("");
   const [editedCover, setEditedCover] = useState("");
+  const [editedEmail, setEditedEmail] = useState("");
+  const [editedPhone, setEditedPhone] = useState("");
+  const [editedAppointmentsUrl, setEditedAppointmentsUrl] = useState("");
+  const [editedSocialTwitter, setEditedSocialTwitter] = useState("");
+  const [editedSocialLinkedin, setEditedSocialLinkedin] = useState("");
+  const [editedSocialInstagram, setEditedSocialInstagram] = useState("");
+  const [editedSocialGithub, setEditedSocialGithub] = useState("");
 
   // Modal control state
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
@@ -273,6 +285,13 @@ export default function App() {
       setEditedAvatar(pData.avatar_url || "");
       setEditedUsername(pData.username || "");
       setEditedCover(pData.cover_image || "");
+      setEditedEmail(pData.email || "");
+      setEditedPhone(pData.phone || "");
+      setEditedAppointmentsUrl(pData.appointments_url || "");
+      setEditedSocialTwitter(pData.social_twitter || "");
+      setEditedSocialLinkedin(pData.social_linkedin || "");
+      setEditedSocialInstagram(pData.social_instagram || "");
+      setEditedSocialGithub(pData.social_github || "");
 
       const connections = await api.links.list();
       setLinks(connections);
@@ -580,7 +599,14 @@ export default function App() {
         bio: editedBio,
         avatar_url: editedAvatar,
         username: editedUsername,
-        cover_image: editedCover
+        cover_image: editedCover,
+        email: editedEmail,
+        phone: editedPhone,
+        appointments_url: editedAppointmentsUrl,
+        social_twitter: editedSocialTwitter,
+        social_linkedin: editedSocialLinkedin,
+        social_instagram: editedSocialInstagram,
+        social_github: editedSocialGithub
       });
       setProfile(updated);
       showNotification("Display profile updated successfully!", "success");
@@ -759,10 +785,12 @@ export default function App() {
       "VERSION:3.0",
       `FN:${dName}`,
       `N:;${dName};;;`,
+      targetProfile.email ? `EMAIL;TYPE=internet,pref:${targetProfile.email}` : "",
+      targetProfile.phone ? `TEL;TYPE=cell,voice,pref:${targetProfile.phone}` : "",
       `NOTE:${notes.replace(/\n/g, ' ')}`,
       `URL;type=pref:https://chipng.com/${targetProfile.username}`,
       "END:VCARD"
-    ].join("\r\n");
+    ].filter(Boolean).join("\r\n");
 
     const blob = new Blob([vcard], { type: "text/vcard;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -1084,15 +1112,6 @@ export default function App() {
                 >
                   Custom Materials
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("nfc")}
-                  className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
-                    activeTab === "nfc" ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/10" : "hover:bg-white/5 text-neutral-300 hover:text-white"
-                  }`}
-                >
-                  NFC Tag Configuration
-                </button>
               </div>
             </div>
 
@@ -1124,7 +1143,7 @@ export default function App() {
           </nav>
 
           {/* Quick Responsive bar for tabs on ultra-small viewports */}
-          <div className="sm:hidden grid grid-cols-4 bg-zinc-950 border-b border-white/5 p-1 text-center shrink-0">
+          <div className="sm:hidden grid grid-cols-3 bg-zinc-950 border-b border-white/5 p-1 text-center shrink-0">
             <button
               onClick={() => setActiveTab("profile")}
               className={`py-2 text-[10px] font-semibold uppercase tracking-wider ${activeTab === "profile" ? "text-amber-500 border-b-2 border-amber-500" : "text-neutral-400"}`}
@@ -1142,12 +1161,6 @@ export default function App() {
               className={`py-2 text-[10px] font-semibold uppercase tracking-wider ${activeTab === "theme" ? "text-amber-500 border-b-2 border-amber-500" : "text-neutral-400"}`}
             >
               Themes
-            </button>
-            <button
-              onClick={() => setActiveTab("nfc")}
-              className={`py-2 text-[10px] font-semibold uppercase tracking-wider ${activeTab === "nfc" ? "text-amber-500 border-b-2 border-amber-500" : "text-neutral-400"}`}
-            >
-              NFC
             </button>
           </div>
 
@@ -1305,6 +1318,111 @@ export default function App() {
                           placeholder="Build the next frontier of metal chip contact profiles..."
                           className="w-full bg-black/50 text-xs text-white border border-white/10 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 resize-none leading-relaxed"
                         />
+                      </div>
+
+                      {/* Contact & Professional Information */}
+                      <div className="pt-4 border-t border-white/10 space-y-4">
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400">
+                          Contact & Scheduling
+                        </h3>
+                        
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase tracking-wider text-neutral-400">
+                            Public Email (vCard)
+                          </label>
+                          <input
+                            type="email"
+                            value={editedEmail}
+                            onChange={(e) => setEditedEmail(e.target.value)}
+                            placeholder="e.g. hello@chipng.com"
+                            className="w-full bg-black/50 text-sm text-white border border-white/10 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase tracking-wider text-neutral-400">
+                            Public Phone (vCard)
+                          </label>
+                          <input
+                            type="tel"
+                            value={editedPhone}
+                            onChange={(e) => setEditedPhone(e.target.value)}
+                            placeholder="e.g. +234 812 345 6789"
+                            className="w-full bg-black/50 text-sm text-white border border-white/10 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase tracking-wider text-neutral-400">
+                            Appointments URL
+                          </label>
+                          <input
+                            type="url"
+                            value={editedAppointmentsUrl}
+                            onChange={(e) => setEditedAppointmentsUrl(e.target.value)}
+                            placeholder="e.g. https://cal.com/vickthor"
+                            className="w-full bg-black/50 text-sm text-white border border-white/10 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Social Media Information */}
+                      <div className="pt-4 border-t border-white/10 space-y-4">
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400">
+                          Social Media (Horizontal Icons)
+                        </h3>
+
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase tracking-wider text-neutral-400">
+                            LinkedIn URL
+                          </label>
+                          <input
+                            type="url"
+                            value={editedSocialLinkedin}
+                            onChange={(e) => setEditedSocialLinkedin(e.target.value)}
+                            placeholder="https://linkedin.com/in/username"
+                            className="w-full bg-black/50 text-sm text-white border border-white/10 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase tracking-wider text-neutral-400">
+                            Twitter / X URL
+                          </label>
+                          <input
+                            type="url"
+                            value={editedSocialTwitter}
+                            onChange={(e) => setEditedSocialTwitter(e.target.value)}
+                            placeholder="https://twitter.com/username"
+                            className="w-full bg-black/50 text-sm text-white border border-white/10 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase tracking-wider text-neutral-400">
+                            Instagram URL
+                          </label>
+                          <input
+                            type="url"
+                            value={editedSocialInstagram}
+                            onChange={(e) => setEditedSocialInstagram(e.target.value)}
+                            placeholder="https://instagram.com/username"
+                            className="w-full bg-black/50 text-sm text-white border border-white/10 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-mono uppercase tracking-wider text-neutral-400">
+                            GitHub URL
+                          </label>
+                          <input
+                            type="url"
+                            value={editedSocialGithub}
+                            onChange={(e) => setEditedSocialGithub(e.target.value)}
+                            placeholder="https://github.com/username"
+                            className="w-full bg-black/50 text-sm text-white border border-white/10 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
                       </div>
 
                       <button
@@ -1467,6 +1585,67 @@ export default function App() {
                          </div>
                        </div>
 
+                  {/* Social links Row */}
+                  {(editedSocialGithub || editedSocialTwitter || editedSocialLinkedin || editedSocialInstagram) && (
+                    <div className="flex justify-center gap-4 mb-4">
+                      {editedSocialGithub && (
+                        <a href={editedSocialGithub} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
+                          <Github className="w-4 h-4 text-white" />
+                        </a>
+                      )}
+                      {editedSocialLinkedin && (
+                        <a href={editedSocialLinkedin} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
+                          <Linkedin className="w-4 h-4 text-white" />
+                        </a>
+                      )}
+                      {editedSocialTwitter && (
+                        <a href={editedSocialTwitter} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
+                          <Twitter className="w-4 h-4 text-white" />
+                        </a>
+                      )}
+                      {editedSocialInstagram && (
+                        <a href={editedSocialInstagram} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
+                          <Instagram className="w-4 h-4 text-white" />
+                        </a>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Appointments & Save Contact Layout */}
+                  <div className="flex gap-2 shrink-0 px-1 pb-4">
+                    {editedAppointmentsUrl && (
+                      <a 
+                        href={editedAppointmentsUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl flex items-center justify-center shadow-lg transition-all"
+                      >
+                        Book Appointment
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadVCard(profile)}
+                      className="flex-1 py-3 bg-white hover:bg-neutral-200 text-black font-bold text-xs rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all"
+                    >
+                      <span>Save Contact</span>
+                    </button>
+                  </div>
+
+                  {/* QR Code display */}
+                  <div className="pt-2 pb-6 px-1 flex flex-col items-center">
+                    <h4 className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest mb-3">Scan to Connect</h4>
+                    <div className="p-3 bg-white rounded-xl shadow-lg">
+                      <QRCodeCanvas 
+                        value={`https://chipng.com/${editedUsername || profile.username || ''}`} 
+                        size={120} 
+                        bgColor={"#ffffff"} 
+                        fgColor={"#000000"} 
+                        level={"Q"}
+                      />
+                    </div>
+                  </div>
+
                   {/* Connection Links Render */}
                   <div className="flex flex-col gap-2.5 shrink-0 px-1">
                     {links.filter(l => l.is_active).length === 0 ? (
@@ -1494,17 +1673,6 @@ export default function App() {
                         )
                       })
                     )}
-                  </div>
-
-                  {/* Save Contact action directly */}
-                  <div className="pt-2 shrink-0 px-1 pb-4">
-                    <button
-                      type="button"
-                      onClick={() => handleDownloadVCard(profile)}
-                      className="w-full py-3 bg-white hover:bg-neutral-200 text-black font-bold text-xs rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all"
-                    >
-                      <span>Save Connection Context</span>
-                    </button>
                   </div>
                      </div>
                   </div>
@@ -1566,7 +1734,7 @@ export default function App() {
                  </button>
                </div>
 
-               {/* Profile Header */}
+                 {/* Profile Header */}
                <div className="flex flex-col items-center text-center space-y-4 mb-10">
                  <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-zinc-950 shadow-2xl relative bg-zinc-900 pointer-events-none">
                     {publicViewData.profile.avatar_url ? (
@@ -1591,6 +1759,32 @@ export default function App() {
                      {publicViewData.profile.bio}
                    </p>
                  </div>
+
+                 {/* Social links Row */}
+                 {(publicViewData.profile.social_github || publicViewData.profile.social_twitter || publicViewData.profile.social_linkedin || publicViewData.profile.social_instagram) && (
+                    <div className="flex justify-center gap-4 mt-6">
+                      {publicViewData.profile.social_github && (
+                        <a href={publicViewData.profile.social_github} target="_blank" rel="noreferrer" className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
+                          <Github className="w-5 h-5 text-white" />
+                        </a>
+                      )}
+                      {publicViewData.profile.social_linkedin && (
+                        <a href={publicViewData.profile.social_linkedin} target="_blank" rel="noreferrer" className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
+                          <Linkedin className="w-5 h-5 text-white" />
+                        </a>
+                      )}
+                      {publicViewData.profile.social_twitter && (
+                        <a href={publicViewData.profile.social_twitter} target="_blank" rel="noreferrer" className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
+                          <Twitter className="w-5 h-5 text-white" />
+                        </a>
+                      )}
+                      {publicViewData.profile.social_instagram && (
+                        <a href={publicViewData.profile.social_instagram} target="_blank" rel="noreferrer" className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
+                          <Instagram className="w-5 h-5 text-white" />
+                        </a>
+                      )}
+                    </div>
+                 )}
                </div>
 
                {/* Links output stream */}
@@ -1628,8 +1822,18 @@ export default function App() {
                  )}
                </div>
 
-               {/* Primary Save vCard download button */}
-               <div className="pt-8">
+               {/* Primary Save vCard & Appointment block */}
+               <div className="pt-8 flex flex-col gap-3">
+                 {publicViewData.profile.appointments_url && (
+                   <a 
+                     href={publicViewData.profile.appointments_url}
+                     target="_blank"
+                     rel="noreferrer"
+                     className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white text-[15px] font-bold rounded-2xl flex items-center justify-center gap-2.5 shadow-xl transition-transform active:scale-95"
+                   >
+                     Book Appointment
+                   </a>
+                 )}
                  <button
                    type="button"
                    onClick={() => handleDownloadVCard(publicViewData.profile)}
@@ -1637,6 +1841,20 @@ export default function App() {
                  >
                    Save to Contacts
                  </button>
+               </div>
+
+               {/* QR Code display */}
+               <div className="pt-12 pb-6 flex flex-col items-center">
+                 <h4 className="text-xs font-mono text-zinc-500 uppercase tracking-widest mb-4">Scan to Connect</h4>
+                 <div className="p-4 bg-white rounded-2xl shadow-xl">
+                   <QRCodeCanvas 
+                     value={`https://chipng.com/${publicViewData.profile.username}`} 
+                     size={160} 
+                     bgColor={"#ffffff"} 
+                     fgColor={"#000000"} 
+                     level={"Q"}
+                   />
+                 </div>
                </div>
 
                {/* Brand promotion footer */}

@@ -322,7 +322,7 @@ export default function PremiumLandingPage({ onLogin, onRegister, onSandbox, onA
                 <div className="space-y-2 mb-8">
                   <h3 className="text-2xl font-bold">Premium Metal + Platform</h3>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-5xl font-black">$49</span>
+                    <span className="text-5xl font-black">₦45,000</span>
                     <span className="text-zinc-500 font-mono text-sm">/ one-time</span>
                   </div>
                 </div>
