@@ -519,7 +519,7 @@ export default function App() {
     if (api.isUsingSupabase()) {
       try {
         setIsLoading(true);
-        const url = await api.profile.uploadImage(file, 'covers');
+        const url = await api.profile.uploadImage(file, 'avatars');
         setEditedCover(url);
         showNotification("Cover uploaded successfully!", "success");
       } catch (err: any) {

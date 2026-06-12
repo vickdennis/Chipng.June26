@@ -376,7 +376,6 @@ export default function PremiumLandingPage({ onLogin, onRegister, onSandbox, onA
               <a href="#" className="hover:text-white transition-colors">Privacy</a>
               <a href="#" className="hover:text-white transition-colors">Terms</a>
               <a href="#" className="hover:text-white transition-colors">Support</a>
-              <a href="#" className="hover:text-white transition-colors" onClick={(e) => { e.preventDefault(); onAdmin?.(); }}>Admin Console</a>
            </div>
 
            <div className="text-xs text-zinc-600 font-mono tracking-widest uppercase">

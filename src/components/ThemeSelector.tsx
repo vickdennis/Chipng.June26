@@ -48,7 +48,7 @@ export default function ThemeSelector({ theme, profile, onChange, onProfileChang
     if (!file) return;
     try {
       setUploadingCover(true);
-      const url = await onUploadImage(file, 'covers');
+      const url = await onUploadImage(file, 'avatars');
       onProfileChange({ cover_image: url });
     } catch (err) {
       console.error(err);
@@ -62,7 +62,7 @@ export default function ThemeSelector({ theme, profile, onChange, onProfileChang
     if (!file) return;
     try {
       setUploadingBg(true);
-      const url = await onUploadImage(file, 'backgrounds');
+      const url = await onUploadImage(file, 'avatars');
       onChange({ backgroundImage: url });
     } catch (err) {
       console.error(err);
