@@ -19,9 +19,13 @@ interface MockDB {
     display_name: string;
     bio: string;
     avatar_url: string;
+    cover_image?: string;
+    icon_style?: string;
     theme: {
       primaryColor: string;
       backgroundColor: string;
+      backgroundImage?: string;
+      fontFamily?: string;
       cardStyle: string;
       textColor: string;
     };

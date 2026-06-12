@@ -53,7 +53,7 @@ interface SortableLinkItemProps {
   onToggleActive: (link: LinkItem) => void;
 }
 
-function SortableLinkItem({ link, onEdit, onDelete, onToggleActive }: SortableLinkItemProps) {
+const SortableLinkItem: React.FC<SortableLinkItemProps> = ({ link, onEdit, onDelete, onToggleActive }) => {
   const {
     attributes,
     listeners,
@@ -146,7 +146,7 @@ export default function LinkListManager({
   onAddTrigger
 }: LinkListManagerProps) {
   
-  const [internalLinks, setInternalLinks] = useState(links);
+  const [internalLinks, setInternalLinks] = useState<LinkItem[]>(links);
 
   useEffect(() => {
     setInternalLinks(links);
@@ -163,11 +163,11 @@ export default function LinkListManager({
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      setInternalLinks((items) => {
+      setInternalLinks((items: LinkItem[]) => {
         const oldIndex = items.findIndex((item) => item.id === active.id);
         const newIndex = items.findIndex((item) => item.id === over.id);
         
-        const newOrder = arrayMove(items, oldIndex, newIndex);
+        const newOrder = arrayMove<LinkItem>(items, oldIndex, newIndex);
         onReorder(newOrder.map(l => l.id));
         return newOrder;
       });
