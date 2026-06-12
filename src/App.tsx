@@ -80,6 +80,7 @@ export default function App() {
   const [editedBio, setEditedBio] = useState("");
   const [editedAvatar, setEditedAvatar] = useState("");
   const [editedUsername, setEditedUsername] = useState("");
+  const [editedCover, setEditedCover] = useState("");
 
   // Modal control state
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
@@ -270,6 +271,7 @@ export default function App() {
       setEditedBio(pData.bio || "");
       setEditedAvatar(pData.avatar_url || "");
       setEditedUsername(pData.username || "");
+      setEditedCover(pData.cover_image || "");
 
       const connections = await api.links.list();
       setLinks(connections);
@@ -499,6 +501,72 @@ export default function App() {
     reader.readAsDataURL(file);
   };
 
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      showNotification("Selected file must be an image format.", "error");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      showNotification("Image exceeds maximum 5MB constraint.", "error");
+      return;
+    }
+
+    if (api.isUsingSupabase()) {
+      try {
+        setIsLoading(true);
+        const url = await api.profile.uploadImage(file, 'covers');
+        setEditedCover(url);
+        showNotification("Cover uploaded successfully!", "success");
+      } catch (err: any) {
+        showNotification(err.message || "Failed to upload cover.", "error");
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        
+        let width = img.width;
+        let height = img.height;
+        const maxSize = 1200; // Cap dimension
+
+        if (width > height) {
+          if (width > maxSize) {
+            height *= maxSize / width;
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width *= maxSize / height;
+            height = maxSize;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        const compressedDataUrl = canvas.toDataURL("image/webp", 0.8);
+        setEditedCover(compressedDataUrl);
+        showNotification("Cover optimized and loaded into preview!", "success");
+      };
+      if (typeof event.target?.result === "string") {
+        img.src = event.target.result;
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   // Profile Save Actions
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -510,7 +578,8 @@ export default function App() {
         display_name: editedDisplayName,
         bio: editedBio,
         avatar_url: editedAvatar,
-        username: editedUsername
+        username: editedUsername,
+        cover_image: editedCover
       });
       setProfile(updated);
       showNotification("Display profile updated successfully!", "success");
@@ -1218,6 +1287,40 @@ export default function App() {
                     </p>
 
                     <form onSubmit={handleUpdateProfile} className="space-y-4">
+                      {/* Cover Image edit */}
+                      <div className="space-y-3">
+                        <div className="bg-white/5 p-4 rounded-2xl border border-white/5 flex gap-4 items-center">
+                          <label className="w-16 h-10 rounded-lg bg-zinc-800 border border-white/10 flex items-center justify-center relative overflow-hidden shrink-0 cursor-pointer group hover:border-amber-500/50 transition-all select-none">
+                            {editedCover ? (
+                              <img src={editedCover} alt="preview" className="w-full h-full object-cover transition-opacity group-hover:opacity-60" referrerPolicy="no-referrer" />
+                            ) : (
+                              <span className="text-xs text-neutral-400 font-bold group-hover:opacity-40">none</span>
+                            )}
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                              <span className="text-[9px] text-white font-mono uppercase font-bold text-center">Upload</span>
+                            </div>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleCoverUpload}
+                              className="hidden"
+                            />
+                          </label>
+                          <div className="flex-1 min-w-0">
+                            <label className="block text-[10px] font-mono uppercase tracking-wider text-neutral-400 mb-1">
+                              Cover Background Image <span className="text-[9px] text-indigo-400 font-mono tracking-tight cursor-default">(Click box to upload custom)</span>
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="https://images.unsplash.com/photo-..."
+                              value={editedCover}
+                              onChange={(e) => setEditedCover(e.target.value)}
+                              className="bg-transparent border-none text-zinc-200 text-xs p-0 focus:ring-0 w-full focus:outline-none placeholder-zinc-600 mt-0.5 truncate"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
                       {/* Avatar preview and edit */}
                       <div className="space-y-3">
                         <div className="bg-white/5 p-4 rounded-2xl border border-white/5 flex gap-4 items-center">
@@ -1527,122 +1630,126 @@ export default function App() {
 
       {/* RENDER SCREEN 4: DETACHED standalone public endpoint link page */}
       {currentScreen === "public" && publicViewData && (
-        <div id="public-screen" className="flex-1 flex flex-col justify-center items-center p-6 min-h-screen relative overflow-hidden">
-          {/* Ambient card color spots */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div 
-              className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[140px] opacity-25" 
-              style={{ backgroundColor: `${publicViewData.profile.theme.primaryColor}40` }}
-            />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-zinc-950 rounded-full blur-[140px]" />
-          </div>
-
-          <div className="w-full max-w-sm text-center relative z-10 pb-12 w-full">
-            {publicViewData.profile.cover_image && (
+        <div id="public-screen" className="flex-1 min-h-screen relative overflow-y-auto">
+          {/* Cover Image Background Option */}
+          {publicViewData.profile.cover_image ? (
+            <div className="absolute top-0 left-0 w-full h-80 z-0">
+               <img src={publicViewData.profile.cover_image} className="w-full h-full object-cover opacity-80" alt="Cover" />
+               <div className="absolute inset-0 bg-gradient-to-b from-transparent to-zinc-950" />
+            </div>
+          ) : (
+            <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
               <div 
-                className="w-full h-32 md:h-48 rounded-t-3xl -mx-6 md:-mx-0 md:rounded-3xl mb-8 border border-white/5 opacity-80 shrink-0 shadow-xl overflow-hidden relative"
-              >
-                <img src={publicViewData.profile.cover_image} className="w-full h-full object-cover" alt="Cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-              </div>
-            )}
-            
-            <div className="space-y-8 mt-4 md:mt-0">
-              {/* Quick Home action for evaluation review */}
-              <div className="flex justify-between items-center mb-2 px-1">
-              <button
-                type="button"
-                onClick={() => {
-                  window.history.pushState({}, '', '/');
-                  const user = api.auth.getCurrentUser();
-                  if (user) {
-                    setCurrentScreen("dashboard");
-                  } else {
-                    setCurrentScreen("landing");
-                  }
-                }}
-                className="text-xs text-zinc-500 hover:text-white transition-all bg-white/5 border border-white/5 px-3 py-1.5 rounded-full"
-              >
-                ← Return to Platform
-              </button>
-              
-              <span className="text-[10px] font-mono text-indigo-400 bg-indigo-400/10 border border-indigo-400/20 px-2.5 py-1 rounded-full uppercase tracking-wider font-semibold">
-                Tap Profile Verified
-              </span>
+                className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] rounded-full blur-[140px] opacity-20" 
+                style={{ backgroundColor: `${publicViewData.profile.theme.primaryColor}` }}
+              />
             </div>
+          )}
 
-            {/* Massive interactive 3D Card tilt */}
-            <NfcCard3D
-              displayName={publicViewData.profile.display_name || publicViewData.profile.username}
-              bio={publicViewData.profile.bio || ""}
-              avatarUrl={publicViewData.profile.avatar_url || ""}
-              theme={publicViewData.profile.theme}
-              nfcData={publicViewData.profile.nfc_data}
-              username={publicViewData.profile.username}
-            />
+          <div className="flex flex-col justify-start items-center p-6 relative z-10 w-full min-h-screen">
+             <div className="w-full max-w-[480px] mx-auto mt-24 md:mt-32 pb-20">
+               {/* Quick Home action for evaluation review */}
+               <div className="absolute top-4 left-4 z-50">
+                 <button
+                   type="button"
+                   onClick={() => {
+                     window.history.pushState({}, '', '/');
+                     const user = api.auth.getCurrentUser();
+                     if (user) {
+                       setCurrentScreen("dashboard");
+                     } else {
+                       setCurrentScreen("landing");
+                     }
+                   }}
+                   className="text-xs text-zinc-400 hover:text-white transition-all bg-black/40 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full flex items-center gap-2"
+                 >
+                   ← Build Yours
+                 </button>
+               </div>
 
-            {/* Profile Credentials text */}
-            <div className="space-y-2 px-2">
-              <h2 className="text-2xl font-black text-white tracking-tight">
-                {publicViewData.profile.display_name || publicViewData.profile.username}
-              </h2>
-              <p className="text-sm text-neutral-400 max-w-sm mx-auto leading-relaxed">
-                {publicViewData.profile.bio || "Building connection pathways with ChipNG physical metals."}
-              </p>
-            </div>
-
-            {/* Links output stream */}
-            <div className="space-y-3 px-1">
-              {publicViewData.links.length === 0 ? (
-                <div className="p-6 bg-white/5 border border-white/5 rounded-2xl text-xs text-zinc-500">
-                  This user has not established any active subfield connection mappings.
-                </div>
-              ) : (
-                publicViewData.links.map((link) => {
-                  const iconObj = AVAILABLE_ICONS.find(i => i.id === link.icon);
-                  const IconComp = iconObj ? iconObj.icon : null;
-                  const iconColor = publicViewData.profile.icon_style === 'colored' ? (iconObj?.color || publicViewData.profile.theme.primaryColor) : publicViewData.profile.theme.primaryColor;
-                  return (
-                    <a
-                      key={link.id}
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full p-4 bg-white/5 border border-white/10 hover:border-white/20 hover:scale-[1.01] rounded-2xl flex items-center justify-between transition-all text-left group"
-                    >
-                      <div className="flex items-center gap-3.5 min-w-0">
-                        <div className="w-8 h-8 rounded-lg bg-black/60 flex items-center justify-center shrink-0">
-                          {IconComp ? <IconComp className="w-4 h-4" style={{ color: iconColor }} /> : <span className="text-[11px] uppercase font-mono" style={{ color: iconColor }}>{link.icon.substring(0,3)}</span>}
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-white text-sm font-semibold truncate leading-snug">{link.title}</span>
-                          <span className="text-[10px] text-zinc-500 truncate">{link.url.replace(/^https?:\/\//, "")}</span>
-                        </div>
+               {/* Profile Header */}
+               <div className="flex flex-col items-center text-center space-y-4 mb-10">
+                 <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-zinc-950 shadow-2xl relative bg-zinc-900 pointer-events-none">
+                    {publicViewData.profile.avatar_url ? (
+                      <img src={publicViewData.profile.avatar_url} alt="Profile Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-3xl font-black text-zinc-700 bg-zinc-800">
+                        {(publicViewData.profile.display_name || publicViewData.profile.username).substring(0, 2).toUpperCase()}
                       </div>
-                      <ExternalLink className="w-4 h-4 text-neutral-500 group-hover:text-white transition-colors shrink-0" />
-                    </a>
-                  );
-                })
-              )}
-            </div>
+                    )}
+                 </div>
+                 
+                 <div className="space-y-2 px-4">
+                   <h1 className="text-2xl font-black text-white tracking-tight flex items-center justify-center gap-2">
+                     {publicViewData.profile.display_name || publicViewData.profile.username}
+                     <span className="bg-amber-500 rounded-full w-4 h-4 flex items-center justify-center -translate-y-2 opacity-90" title="ChipNG Verified">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-2.5 h-2.5 text-black">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                     </span>
+                   </h1>
+                   <p className="text-[14px] text-zinc-400 max-w-sm mx-auto leading-relaxed">
+                     {publicViewData.profile.bio}
+                   </p>
+                 </div>
+               </div>
 
-            {/* Primary Save vCard download button */}
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => handleDownloadVCard(publicViewData.profile)}
-                className="w-full py-4 bg-white hover:bg-neutral-200 text-black text-sm font-bold rounded-2xl flex items-center justify-center gap-2.5 shadow-xl transition-all"
-              >
-                <span>Add Directly to Contacts (vCard)</span>
-              </button>
-            </div>
+               {/* Links output stream */}
+               <div className="space-y-3 w-full">
+                 {publicViewData.links.length === 0 ? (
+                   <div className="p-6 bg-white/5 border border-white/5 rounded-2xl text-xs text-zinc-500 text-center">
+                     No active connections mapped yet.
+                   </div>
+                 ) : (
+                   publicViewData.links.map((link) => {
+                     const iconObj = AVAILABLE_ICONS.find(i => i.id === link.icon);
+                     const IconComp = iconObj ? iconObj.icon : null;
+                     const iconColor = publicViewData.profile.icon_style === 'colored' ? (iconObj?.color || publicViewData.profile.theme.primaryColor) : publicViewData.profile.theme.primaryColor;
+                     return (
+                       <a
+                         key={link.id}
+                         href={link.url}
+                         target="_blank"
+                         rel="noopener noreferrer"
+                         className="w-full p-4 bg-zinc-900/60 backdrop-blur border border-white/5 hover:border-white/20 hover:bg-white/5 hover:-translate-y-0.5 rounded-[20px] flex items-center transition-all text-left group shadow-lg"
+                       >
+                         <div className="w-12 h-12 rounded-xl bg-black/40 flex items-center justify-center shrink-0 border border-white/5 relative overflow-hidden group-hover:scale-105 transition-transform">
+                           <div className="absolute inset-0 opacity-20" style={{ backgroundColor: iconColor }}></div>
+                           {IconComp ? <IconComp className="w-5 h-5 relative z-10" style={{ color: iconColor }} /> : <span className="text-[12px] uppercase font-bold relative z-10" style={{ color: iconColor }}>{link.icon.substring(0,2)}</span>}
+                         </div>
+                         <div className="flex flex-col flex-1 min-w-0 px-4">
+                           <span className="text-white text-[15px] font-semibold truncate tracking-tight">{link.title}</span>
+                         </div>
+                         <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-zinc-500 group-hover:text-white group-hover:bg-white/10 transition-colors shrink-0">
+                            <ExternalLink className="w-4 h-4" />
+                         </div>
+                       </a>
+                     );
+                   })
+                 )}
+               </div>
 
-            {/* Brand promotion */}
-            <p className="text-[10px] text-zinc-600 font-mono pt-8">
-              POWERED BY CHIPNG NFC HARDWARE NETWORKS
-            </p>
-            </div>
+               {/* Primary Save vCard download button */}
+               <div className="pt-8">
+                 <button
+                   type="button"
+                   onClick={() => handleDownloadVCard(publicViewData.profile)}
+                   className="w-full py-4 bg-white hover:bg-neutral-200 text-black text-[15px] font-bold rounded-2xl flex items-center justify-center gap-2.5 shadow-xl transition-transform active:scale-95"
+                 >
+                   Save to Contacts
+                 </button>
+               </div>
 
+               {/* Brand promotion footer */}
+               <div className="pt-12 text-center pb-6">
+                  <a href="/" className="inline-flex items-center gap-2 text-[11px] text-zinc-600 font-medium hover:text-zinc-400 transition-colors tracking-wide uppercase">
+                    <div className="w-4 h-4 rounded-full bg-white/10 flex items-center justify-center">
+                       <span className="block w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                    </div>
+                    Created with ChipNG
+                  </a>
+               </div>
+             </div>
           </div>
         </div>
       )}

