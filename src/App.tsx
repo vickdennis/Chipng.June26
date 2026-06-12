@@ -79,6 +79,7 @@ export default function App() {
   const [editedDisplayName, setEditedDisplayName] = useState("");
   const [editedBio, setEditedBio] = useState("");
   const [editedAvatar, setEditedAvatar] = useState("");
+  const [editedUsername, setEditedUsername] = useState("");
 
   // Modal control state
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
@@ -268,6 +269,7 @@ export default function App() {
       setEditedDisplayName(pData.display_name || "");
       setEditedBio(pData.bio || "");
       setEditedAvatar(pData.avatar_url || "");
+      setEditedUsername(pData.username || "");
 
       const connections = await api.links.list();
       setLinks(connections);
@@ -507,7 +509,8 @@ export default function App() {
       const updated = await api.profile.update({
         display_name: editedDisplayName,
         bio: editedBio,
-        avatar_url: editedAvatar
+        avatar_url: editedAvatar,
+        username: editedUsername
       });
       setProfile(updated);
       showNotification("Display profile updated successfully!", "success");
@@ -638,7 +641,7 @@ export default function App() {
   // Copy link utility
   const getPublicUrl = () => {
     const un = profile?.username || "demo";
-    return `${window.location.origin}/${un}`;
+    return `chipng.com/${un}`;
   };
 
   const handleCopyPublicUrl = () => {
@@ -660,7 +663,7 @@ export default function App() {
       `FN:${dName}`,
       `N:;${dName};;;`,
       `NOTE:${notes.replace(/\n/g, ' ')}`,
-      `URL;type=pref:${window.location.origin}/${targetProfile.username}`,
+      `URL;type=pref:https://chipng.com/${targetProfile.username}`,
       "END:VCARD"
     ].join("\r\n");
 
@@ -1275,6 +1278,20 @@ export default function App() {
                             ))}
                           </div>
                         </div>
+                      </div>
+
+                      {/* Username Input */}
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase tracking-wider text-neutral-400">
+                          Public Username (chipng.com/username)
+                        </label>
+                        <input
+                          type="text"
+                          value={editedUsername}
+                          onChange={(e) => setEditedUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
+                          placeholder="e.g. vickthor"
+                          className="w-full bg-black/50 text-sm text-white border border-white/10 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 font-mono"
+                        />
                       </div>
 
                       {/* Name Input */}
