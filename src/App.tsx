@@ -6,6 +6,7 @@ import ThemeSelector from "./components/ThemeSelector";
 import LinkListManager from "./components/LinkListManager";
 import AddEditLinkModal, { AVAILABLE_ICONS } from "./components/AddEditLinkModal";
 import NfcTagSettings from "./components/NfcTagSettings";
+import PremiumLandingPage from "./components/PremiumLandingPage";
 import AdminPanel from "./components/AdminPanel";
 import { supabase } from "./supabaseClient.js";
 import { 
@@ -707,6 +708,33 @@ export default function App() {
     }
   };
 
+  const handleSandboxLogin = async () => {
+    setIsLoading(true);
+    try {
+      const session = await api.auth.signIn("demo@chipng.co", "demo123");
+      setCurrentUser(session.user);
+      const success = await loadUserData();
+      if (success) {
+        setCurrentScreen("dashboard");
+        showNotification("Logged in seamlessly as Demo Guest!", "success");
+      }
+    } catch (err) {
+      try {
+        const session = await api.auth.signUp("demo@chipng.co", "demo123", "vickthor", "Victor Dennis");
+        setCurrentUser(session.user);
+        const success = await loadUserData();
+        if (success) {
+          setCurrentScreen("dashboard");
+          showNotification("Demo profile set up successfully!", "success");
+        }
+      } catch {
+        showNotification("Demo session database offline.", "error");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Copy link utility
   const getPublicUrl = () => {
     const un = profile?.username || "demo";
@@ -803,164 +831,18 @@ export default function App() {
 
       {/* RENDER SCREEN 1: LANDING/MARKETING PAGE */}
       {currentScreen === "landing" && (
-        <div id="landing-screen" className="flex flex-col flex-1 relative overflow-hidden bg-[#0A0A0A]">
-          {/* Visual gradient light ambient circles */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-500/20 rounded-full blur-[140px]" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-500/10 rounded-full blur-[140px]" />
-            <div className="absolute top-[40%] right-[15%] w-[30%] h-[30%] bg-amber-500/10 rounded-full blur-[120px]" />
-          </div>
-
-          {/* Premium Header Navigation */}
-          <header className="h-16 border-b border-white/10 flex items-center justify-between px-6 md:px-12 bg-zinc-900/50 backdrop-blur-xl shrink-0 z-20">
-            <div className="flex items-center gap-2">
-              <div className="text-white">
-                <ChipLogo className="w-8 h-8" />
-              </div>
-              <span className="text-white font-bold tracking-tight text-xl uppercase">ChipNG</span>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <span className="hidden md:inline-flex items-center gap-1.5 text-[10px] font-mono text-emerald-400 bg-emerald-400/10 px-2.5 py-1 rounded-full border border-emerald-400/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                V2.6 Live Build
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthMode("login");
-                  setCurrentScreen("auth");
-                }}
-                className="px-4 py-1.5 text-xs font-semibold hover:text-white transition-colors text-neutral-300"
-              >
-                Sign In
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthMode("signup");
-                  setCurrentScreen("auth");
-                }}
-                className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-full text-xs font-semibold transition-all shadow-lg shadow-indigo-500/20"
-              >
-                Register Card
-              </button>
-            </div>
-          </header>
-
-          {/* Landing Core Body Content */}
-          <main className="flex-1 flex flex-col justify-center items-center px-4 py-12 md:py-20 text-center max-w-5xl mx-auto z-10 space-y-10">
-            {/* Visual Micro branding banner */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[11px] text-zinc-300 font-mono tracking-wide">
-              <span className="w-2 h-2 rounded-full bg-amber-500" />
-              PHYSICAL TO DIGITAL METALLIC NFC CHIP TECHNOLOGY
-            </div>
-
-            {/* Title Statement */}
-            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight leading-tight max-w-4xl text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-200 to-zinc-500">
-              Your Professional Identity,<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-indigo-400 to-emerald-400">
-                Transmitted via Contactless Tap.
-              </span>
-            </h1>
-
-            {/* Accompanying pitch */}
-            <p className="text-zinc-400 max-w-2xl mx-auto text-sm md:text-base leading-relaxed">
-              ChipNG is a high-density, customizable link-in-bio SaaS built for modern networkers. 
-              Configure an elegant 3D digital smart card, link it to any rewriteable NFC tag, 
-              and download immediate vCard coordinates instantly.
-            </p>
-
-            {/* Action controls */}
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthMode("signup");
-                  setCurrentScreen("auth");
-                }}
-                className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:opacity-95 font-bold text-sm text-black rounded-full transition-all shadow-xl shadow-amber-500/20 flex items-center justify-center gap-2"
-              >
-                <span>Initialize Custom Profile</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
-
-              <button
-                type="button"
-                onClick={async () => {
-                  // Simulate guest mode using demo data, or load local default
-                  setIsLoading(true);
-                  try {
-                    // Try to log in with direct demo account parameters natively
-                    const session = await api.auth.signIn("demo@chipng.co", "demo123");
-                    setCurrentUser(session.user);
-                    const success = await loadUserData();
-                    if (success) {
-                      setCurrentScreen("dashboard");
-                      showNotification("Logged in seamlessly as Demo Guest!", "success");
-                    }
-                  } catch (err) {
-                    // If login failed, register demo on server first
-                    try {
-                      const session = await api.auth.signUp("demo@chipng.co", "demo123", "vickthor", "Victor Dennis");
-                      setCurrentUser(session.user);
-                      const success = await loadUserData();
-                      if (success) {
-                        setCurrentScreen("dashboard");
-                        showNotification("Demo profile set up successfully!", "success");
-                      }
-                    } catch {
-                      showNotification("Demo session database offline.", "error");
-                    }
-                  } finally {
-                    setIsLoading(false);
-                  }
-                }}
-                className="w-full sm:w-auto px-8 py-4 bg-zinc-900 hover:bg-zinc-800 border border-white/10 hover:border-white/20 text-white font-semibold text-sm rounded-full transition-all flex items-center justify-center gap-2"
-              >
-                <span>Live Interactive Sandbox Demo</span>
-              </button>
-            </div>
-
-            {/* Feature Bento Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-16 text-left max-w-4xl mx-auto w-full">
-              <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-3 hover:border-white/10 transition-colors">
-                <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400">
-                  <Smartphone className="w-5 h-5" />
-                </div>
-                <h3 className="text-white text-base font-semibold">Physical NFC Pairing</h3>
-                <p className="text-xs text-neutral-400 leading-normal">
-                  Map NFC serial ids to cold metallic smart cards. Compatible with routine iOS & Android tap sharing systems natively.
-                </p>
-              </div>
-
-              <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-3 hover:border-white/10 transition-colors">
-                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-                  <span className="material-symbols-outlined text-[20px] font-bold">Layers</span>
-                </div>
-                <h3 className="text-white text-base font-semibold">Interactive 3D Cards</h3>
-                <p className="text-xs text-neutral-400 leading-normal">
-                  Stunning responsive 3D card layout engine which tilts dynamically on desktop mouse moves and mobile gyroscope flips.
-                </p>
-              </div>
-
-              <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-3 hover:border-white/10 transition-colors">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                  <Cpu className="w-5 h-5" />
-                </div>
-                <h3 className="text-white text-base font-semibold">vCard Instant Contact</h3>
-                <p className="text-xs text-neutral-400 leading-normal">
-                  Let prospects download your verified contact data, links, or emails directly to their native device phonebooks.
-                </p>
-              </div>
-            </div>
-          </main>
-
-          {/* Premium Footer */}
-          <footer className="h-16 border-t border-white/5 flex items-center justify-center text-[11px] text-zinc-500 font-mono z-10 shrink-0">
-            © 2026 CHIPNG TECHNOLOGIES INC. • BUILT IN HIGH DENSITY COLD STEEL WORKSPACE
-          </footer>
-        </div>
+        <PremiumLandingPage 
+          onLogin={() => {
+            setAuthMode("login");
+            setCurrentScreen("auth");
+          }}
+          onRegister={() => {
+            setAuthMode("signup");
+            setCurrentScreen("auth");
+          }}
+          onSandbox={handleSandboxLogin}
+          onAdmin={() => setCurrentScreen("admin")}
+        />
       )}
 
       {/* RENDER SCREEN 2: AUTHENTICATION CONTAINER (SIGN UP / SIGN IN) */}
@@ -1541,34 +1423,49 @@ export default function App() {
                 {/* Main scrollable body wrapper of preview details */}
                 <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth space-y-6 pt-1 pb-4 relative">
                   
-                  {profile.cover_image && (
-                    <div className="absolute top-0 left-0 w-full h-32 opacity-50 shrink-0 pointer-events-none rounded-t-xl overflow-hidden">
-                      <img src={profile.cover_image} className="w-full h-full object-cover" alt="Cover" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 to-transparent" />
+                  {/* Cover Image Background Option */}
+                  {editedCover ? (
+                    <div className="absolute top-0 left-0 w-full h-32 z-0 rounded-t-xl overflow-hidden">
+                       <img src={editedCover} className="w-full h-full object-cover opacity-80" alt="Cover" />
+                       <div className="absolute inset-0 bg-gradient-to-b from-transparent to-zinc-950" />
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 rounded-xl">
+                      <div 
+                        className="absolute top-0 left-1/2 -translate-x-1/2 w-[300px] h-[200px] rounded-full blur-[80px] opacity-20" 
+                        style={{ backgroundColor: `${profile.theme.primaryColor}` }}
+                      />
                     </div>
                   )}
 
-                  {/* Dynamic 3D Card tilt previews */}
-                  <div className="shrink-0 relative z-10 pt-4">
-                    <NfcCard3D
-                      displayName={editedDisplayName}
-                      bio={editedBio}
-                      avatarUrl={editedAvatar}
-                      theme={profile.theme}
-                      nfcData={profile.nfc_data}
-                      username={profile.username}
-                    />
-                  </div>
-
-                  {/* Public biography details */}
-                  <div className="text-center shrink-0 px-2 space-y-1.5">
-                    <h4 className="text-white font-bold text-lg tracking-tight">
-                      {editedDisplayName || "Your Name"}
-                    </h4>
-                    <p className="text-zinc-500 text-xs leading-normal">
-                      {editedBio || "Build a spectacular minimal touch profile..."}
-                    </p>
-                  </div>
+                  <div className="flex flex-col justify-start items-center p-4 relative z-10 w-full pb-8">
+                     <div className="w-full mt-12">
+                       {/* Profile Header */}
+                       <div className="flex flex-col items-center text-center space-y-3 mb-6">
+                         <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-zinc-950 shadow-xl relative bg-zinc-900 pointer-events-none">
+                            {editedAvatar ? (
+                              <img src={editedAvatar} alt="Profile Avatar" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-xl font-black text-zinc-700 bg-zinc-800">
+                                {(editedDisplayName || profile.username).substring(0, 2).toUpperCase()}
+                              </div>
+                            )}
+                         </div>
+                         
+                         <div className="space-y-1">
+                           <h1 className="text-lg font-black text-white tracking-tight flex items-center justify-center gap-1.5">
+                             {editedDisplayName || "Your Name"}
+                             <span className="bg-amber-500 rounded-full w-3 h-3 flex items-center justify-center -translate-y-1 opacity-90" title="ChipNG Verified">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-2 h-2 text-black">
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                             </span>
+                           </h1>
+                           <p className="text-xs text-zinc-400 max-w-sm mx-auto leading-relaxed">
+                             {editedBio || "Build a spectacular minimal touch profile..."}
+                           </p>
+                         </div>
+                       </div>
 
                   {/* Connection Links Render */}
                   <div className="flex flex-col gap-2.5 shrink-0 px-1">
@@ -1608,6 +1505,8 @@ export default function App() {
                     >
                       <span>Save Connection Context</span>
                     </button>
+                  </div>
+                     </div>
                   </div>
 
                 </div>
