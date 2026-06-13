@@ -764,7 +764,8 @@ export default function App() {
   // Copy link utility
   const getPublicUrl = () => {
     const un = profile?.username || "demo";
-    return `chipng.com/${un}`;
+    // Using window.location.origin for live preview testing, could be replaced strictly with "chipng.com" in production
+    return `${window.location.origin}/${un}`;
   };
 
   const handleCopyPublicUrl = () => {
@@ -1124,11 +1125,22 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => loadPublicProfile(profile.username)}
-                className="text-neutral-400 hover:text-white p-2 rounded-lg bg-zinc-800/40 border border-white/5 hover:border-white/10 transition-all text-xs flex items-center gap-1.5 font-medium"
-                title="View public smart card profile link"
+                className="text-neutral-400 hover:text-white p-2 text-xs flex items-center gap-1.5 font-medium transition-colors"
+                title="Preview public smart card profile link"
               >
-                <Eye className="w-4 h-4 text-emerald-400" />
-                <span className="hidden md:inline">Public Link</span>
+                <Eye className="w-4 h-4" />
+                <span className="hidden md:inline">Preview</span>
+              </button>
+
+              {/* Copy Shareable Link */}
+              <button
+                type="button"
+                onClick={handleCopyPublicUrl}
+                className="text-neutral-400 hover:text-white p-2 rounded-lg bg-zinc-800/40 border border-white/5 hover:border-white/10 transition-all text-xs flex items-center gap-1.5 font-medium"
+                title="Copy shareable link"
+              >
+                {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-emerald-400" />}
+                <span className="hidden md:inline">{copiedLink ? "Copied!" : "Share Link"}</span>
               </button>
 
               <button
@@ -1290,6 +1302,18 @@ export default function App() {
                           placeholder="e.g. vickthor"
                           className="w-full bg-black/50 text-sm text-white border border-white/10 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 font-mono"
                         />
+                        {editedUsername && (
+                          <div className="mt-2 flex items-center justify-between bg-white/5 border border-white/10 rounded-lg p-2 px-3">
+                            <span className="text-xs text-neutral-400 font-mono truncate">{window.location.origin}/{editedUsername}</span>
+                            <button
+                              type="button"
+                              onClick={handleCopyPublicUrl}
+                              className="text-amber-500 hover:text-amber-400 text-xs font-bold uppercase tracking-widest pl-3 flex items-center gap-1"
+                            >
+                              {copiedLink ? "Copied" : "Copy"}
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       {/* Name Input */}
@@ -1637,7 +1661,7 @@ export default function App() {
                     <h4 className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest mb-3">Scan to Connect</h4>
                     <div className="p-3 bg-white rounded-xl shadow-lg">
                       <QRCodeCanvas 
-                        value={`https://chipng.com/${editedUsername || profile.username || ''}`} 
+                        value={`${window.location.origin}/${editedUsername || profile.username || ''}`} 
                         size={120} 
                         bgColor={"#ffffff"} 
                         fgColor={"#000000"} 
@@ -1848,7 +1872,7 @@ export default function App() {
                  <h4 className="text-xs font-mono text-zinc-500 uppercase tracking-widest mb-4">Scan to Connect</h4>
                  <div className="p-4 bg-white rounded-2xl shadow-xl">
                    <QRCodeCanvas 
-                     value={`https://chipng.com/${publicViewData.profile.username}`} 
+                     value={`${window.location.origin}/${publicViewData.profile.username}`} 
                      size={160} 
                      bgColor={"#ffffff"} 
                      fgColor={"#000000"} 
