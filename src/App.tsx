@@ -764,8 +764,7 @@ export default function App() {
   // Copy link utility
   const getPublicUrl = () => {
     const un = profile?.username || "demo";
-    // Using window.location.origin for live preview testing, could be replaced strictly with "chipng.com" in production
-    return `${window.location.origin}/${un}`;
+    return `https://chipng.com/${un}`;
   };
 
   const handleCopyPublicUrl = () => {
@@ -1304,7 +1303,7 @@ export default function App() {
                         />
                         {editedUsername && (
                           <div className="mt-2 flex items-center justify-between bg-white/5 border border-white/10 rounded-lg p-2 px-3">
-                            <span className="text-xs text-neutral-400 font-mono truncate">{window.location.origin}/{editedUsername}</span>
+                            <span className="text-xs text-neutral-400 font-mono truncate">https://chipng.com/{editedUsername}</span>
                             <button
                               type="button"
                               onClick={handleCopyPublicUrl}
@@ -1661,7 +1660,7 @@ export default function App() {
                     <h4 className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest mb-3">Scan to Connect</h4>
                     <div className="p-3 bg-white rounded-xl shadow-lg">
                       <QRCodeCanvas 
-                        value={`${window.location.origin}/${editedUsername || profile.username || ''}`} 
+                        value={`https://chipng.com/${editedUsername || profile.username || ''}`} 
                         size={120} 
                         bgColor={"#ffffff"} 
                         fgColor={"#000000"} 
@@ -1872,7 +1871,7 @@ export default function App() {
                  <h4 className="text-xs font-mono text-zinc-500 uppercase tracking-widest mb-4">Scan to Connect</h4>
                  <div className="p-4 bg-white rounded-2xl shadow-xl">
                    <QRCodeCanvas 
-                     value={`${window.location.origin}/${publicViewData.profile.username}`} 
+                     value={`https://chipng.com/${publicViewData.profile.username}`} 
                      size={160} 
                      bgColor={"#ffffff"} 
                      fgColor={"#000000"} 
