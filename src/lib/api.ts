@@ -337,49 +337,77 @@ export const api = {
 
     getPublicProfile: async (username: string): Promise<{ profile: Profile; links: LinkItem[] }> => {
       const cleanUsername = username.toLowerCase().trim();
-      if (isSupabaseConfigured && supabase) {
-        // Fetch public profile and associated active links
-        const { data: profile, error: profileErr } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("username", cleanUsername)
-          .single();
+      let profileData: any = null;
+      let linksData: any[] = [];
+      
+      console.log(`[DEBUG] Attempting to load public profile for username: ${cleanUsername}`);
+      
+      try {
+        if (isSupabaseConfigured && supabase) {
+          // Fetch public profile and associated active links
+          const { data: profile, error: profileErr } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("username", cleanUsername)
+            .single();
 
-        if (profileErr) throw new Error("Profile not found.");
+          if (profileErr) {
+            console.error("[DEBUG] Supabase query error:", profileErr.message || profileErr);
+            throw new Error("Profile not found.");
+          }
 
+          const { data: links, error: linksErr } = await supabase
+            .from("links")
+            .select("*")
+            .eq("user_id", profile.id)
+            .eq("is_active", true)
+            .order("order_index", { ascending: true });
+
+          if (linksErr) {
+            console.error("[DEBUG] Supabase links query error:", linksErr.message || linksErr);
+            throw new Error("Failed to load associated card links.");
+          }
+          
+          profileData = profile;
+          linksData = links || [];
+        } else {
+          const response = await fetch(`/api/profile/public/${encodeURIComponent(cleanUsername)}`);
+          if (!response.ok) {
+            console.error(`[DEBUG] Backend returned status ${response.status}`);
+            throw new Error("Public profile not found.");
+          }
+          
+          const result = await response.json();
+          profileData = result.profile;
+          linksData = result.links || [];
+        }
+        
+        console.log(`[DEBUG] Profile found successfully for ${cleanUsername}`);
+        
+        // Output sanitized robust profile
         const robustProfile = {
-          ...profile,
-          theme: profile.theme || {
+          ...profileData,
+          bio: profileData.bio || "Welcome to my Chip NG profile",
+          avatar_url: profileData.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanUsername}`,
+          cover_image: profileData.cover_image || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop",
+          theme: profileData.theme || {
             primaryColor: "#6366f1",
             backgroundColor: "#0f172a",
             cardStyle: "glassmorphism",
             textColor: "#ffffff"
           },
-          nfc_data: profile.nfc_data || {
+          nfc_data: profileData.nfc_data || {
             serialNumber: null,
             activationStatus: "pending"
           }
         };
-
-        const { data: links, error: linksErr } = await supabase
-          .from("links")
-          .select("*")
-          .eq("user_id", profile.id)
-          .eq("is_active", true)
-          .order("order_index", { ascending: true });
-
-        if (linksErr) throw new Error("Failed to load associated card links.");
-
+        
         return {
           profile: robustProfile as Profile,
-          links: links as LinkItem[]
+          links: linksData as LinkItem[]
         };
-      } else {
-        const response = await fetch(`/api/profile/public/${encodeURIComponent(cleanUsername)}`);
-        if (!response.ok) {
-          throw new Error("Public profile not found.");
-        }
-        return await response.json();
+      } catch (err: any) {
+        throw new Error(err.message || "Profile not found.");
       }
     }
   },

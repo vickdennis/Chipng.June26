@@ -243,9 +243,9 @@ export default function App() {
       document.title = "Admin Panel | ChipNG";
     } else if (currentScreen === "public" && publicViewData) {
       const p = publicViewData.profile;
-      document.title = `${p.display_name || p.username} — Contactless NFC Profile | ChipNG`;
+      document.title = `${p.display_name || p.username} | Chip NG`;
       
-      const description = p.bio || `Check out ${p.display_name || p.username}'s premium digital smart card on ChipNG.`;
+      const description = `Visit ${p.display_name || p.username}'s digital profile on Chip NG.`;
       const metaDesc = document.querySelector('meta[name="description"]');
       if (metaDesc) metaDesc.setAttribute("content", description);
       
@@ -1810,9 +1810,9 @@ export default function App() {
               <span className="text-3xl">📴</span>
             </div>
             
-            <h1 className="text-4xl font-black text-white tracking-tight">Profile Offline</h1>
+            <h1 className="text-4xl font-black text-white tracking-tight">Profile Not Found</h1>
             <p className="text-sm text-zinc-400">
-              The digital smart card you are looking for does not exist or has been disabled by the owner.
+              This profile may have been removed or does not exist.
             </p>
             
             <button

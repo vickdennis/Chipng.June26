@@ -16,6 +16,7 @@ interface MockDB {
   profiles: Array<{
     id: string;
     username: string;
+    email?: string;
     display_name: string;
     bio: string;
     avatar_url: string;
