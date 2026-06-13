@@ -92,6 +92,34 @@ ON public.products FOR ALL USING (
     )
 );
 
+-- Appointments Table
+CREATE TABLE IF NOT EXISTS public.appointments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    profile_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    date DATE NOT NULL,
+    time TEXT NOT NULL,
+    guest_name TEXT NOT NULL,
+    guest_email TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
+
+-- Anyone can insert an appointment (book)
+CREATE POLICY "Anyone can book an appointment"
+ON public.appointments FOR INSERT
+WITH CHECK (true);
+
+-- Profile owners can view their appointments
+CREATE POLICY "Profile owners can view appointments"
+ON public.appointments FOR SELECT
+USING (auth.uid() = profile_id);
+
+-- Profile owners can delete their appointments
+CREATE POLICY "Profile owners can delete appointments"
+ON public.appointments FOR DELETE
+USING (auth.uid() = profile_id);
+
 -- 2. Table: links
 CREATE TABLE IF NOT EXISTS public.links (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

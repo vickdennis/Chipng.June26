@@ -36,6 +36,16 @@ export interface LinkItem {
   created_at: string;
 }
 
+export interface Appointment {
+  id: string;
+  profile_id: string;
+  date: string;
+  time: string;
+  guest_name: string;
+  guest_email: string;
+  created_at: string;
+}
+
 export interface UserSession {
   user: {
     id: string;

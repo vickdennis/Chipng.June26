@@ -542,6 +542,88 @@ export const api = {
     }
   },
 
+  // Appointments Actions
+  appointments: {
+    list: async (): Promise<any[]> => {
+      if (isSupabaseConfigured && supabase) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Unauthenticated");
+
+        const { data, error } = await supabase
+          .from("appointments")
+          .select("*")
+          .eq("profile_id", user.id)
+          .order("date", { ascending: true })
+          .order("time", { ascending: true });
+
+        if (error) throw new Error(error.message);
+        return data || [];
+      } else {
+        const token = localStorage.getItem(TOKEN_KEY);
+        const response = await fetch("/api/appointments", {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+
+        if (!response.ok) throw new Error("Failed to load appointments.");
+        return await response.json();
+      }
+    },
+
+    book: async (profile_id: string, date: string, time: string, guest_name: string, guest_email: string): Promise<any> => {
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from("appointments")
+          .insert({
+            profile_id,
+            date,
+            time,
+            guest_name,
+            guest_email
+          })
+          .select()
+          .single();
+
+        if (error) throw new Error(error.message);
+        return data;
+      } else {
+        const response = await fetch("/api/appointments", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ profile_id, date, time, guest_name, guest_email })
+        });
+
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.error || "Failed to book appointment.");
+        }
+
+        return await response.json();
+      }
+    },
+
+    delete: async (id: string): Promise<void> => {
+      if (isSupabaseConfigured && supabase) {
+        const { error } = await supabase
+          .from("appointments")
+          .delete()
+          .eq("id", id);
+
+        if (error) throw new Error(error.message);
+      } else {
+        const token = localStorage.getItem(TOKEN_KEY);
+        const response = await fetch(`/api/appointments/${id}`, {
+          method: "DELETE",
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.error || "Failed to delete appointment.");
+        }
+      }
+    }
+  },
+
   // Admin Actions
   admin: {
     checkIsAdmin: async (): Promise<boolean> => {

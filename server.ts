@@ -48,6 +48,7 @@ interface MockDB {
   roles: Array<{ user_id: string; role: string }>;
   blogs: Array<{ id: string; title: string; content: string; author_id: string; created_at: string }>;
   products: Array<{ id: string; name: string; description: string; price: number; created_at: string }>;
+  appointments: Array<{ id: string; profile_id: string; date: string; time: string; guest_name: string; guest_email: string; created_at: string }>;
 }
 
 // Default Seed Data
@@ -125,7 +126,8 @@ const defaultDB: MockDB = {
   ],
   products: [
     { id: "prod-1", name: "NFC Smart Card", description: "A smart business card.", price: 19.99, created_at: new Date().toISOString() }
-  ]
+  ],
+  appointments: []
 };
 
 // Database helper functions
@@ -568,6 +570,73 @@ app.delete("/api/admin/products/:id", requireAdmin, (req, res) => {
   res.json({ success: true, message: "Deleted." });
 });
 
+
+// Appointments API
+app.get("/api/appointments", (req, res) => {
+  const userId = getAuthUserId(req);
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized access: login required." });
+  }
+
+  const db = readDB();
+  const appointments = (db.appointments || []).filter(a => a.profile_id === userId);
+  res.json(appointments);
+});
+
+app.post("/api/appointments", (req, res) => {
+  const { profile_id, date, time, guest_name, guest_email } = req.body;
+  
+  if (!profile_id || !date || !time || !guest_name || !guest_email) {
+    return res.status(400).json({ error: "Missing required parameters." });
+  }
+
+  const db = readDB();
+  // Ensure profile exists
+  if (!db.profiles.some(p => p.id === profile_id)) {
+    return res.status(404).json({ error: "Profile not found." });
+  }
+
+  const newAppointment = {
+    id: "apt-" + Math.random().toString(36).substring(2, 11),
+    profile_id,
+    date,
+    time,
+    guest_name,
+    guest_email,
+    created_at: new Date().toISOString()
+  };
+
+  if (!db.appointments) db.appointments = [];
+  db.appointments.push(newAppointment);
+  writeDB(db);
+
+  res.status(201).json(newAppointment);
+});
+
+app.delete("/api/appointments/:id", (req, res) => {
+  const userId = getAuthUserId(req);
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized access: login required." });
+  }
+
+  const { id } = req.params;
+  const db = readDB();
+
+  if (!db.appointments) {
+    return res.status(404).json({ error: "Not found." });
+  }
+
+  const appointmentIndex = db.appointments.findIndex(a => a.id === id && a.profile_id === userId);
+  
+  if (appointmentIndex === -1) {
+    return res.status(404).json({ error: "Appointment not found or unauthorized deletion access." });
+  }
+
+  db.appointments.splice(appointmentIndex, 1);
+  writeDB(db);
+
+  res.json({ success: true, message: "Appointment deleted successfully." });
+});
 
 // Vite Dev Server / Static Production Server Mounting
 async function init() {

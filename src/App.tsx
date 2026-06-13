@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { api } from "./lib/api";
-import { Profile, LinkItem, UserSession, ThemeConfig, NfcData } from "./types";
+import { Profile, LinkItem, UserSession, ThemeConfig, NfcData, Appointment } from "./types";
 import NfcCard3D from "./components/NfcCard3D";
 import ThemeSelector from "./components/ThemeSelector";
 import LinkListManager from "./components/LinkListManager";
@@ -8,6 +8,7 @@ import AddEditLinkModal, { AVAILABLE_ICONS } from "./components/AddEditLinkModal
 import NfcTagSettings from "./components/NfcTagSettings";
 import PremiumLandingPage from "./components/PremiumLandingPage";
 import AdminPanel from "./components/AdminPanel";
+import { AppointmentBookingModal } from "./components/AppointmentBookingModal";
 import { supabase } from "./supabaseClient.js";
 import { QRCodeCanvas } from "qrcode.react";
 import { 
@@ -37,7 +38,10 @@ import {
   Twitter,
   Linkedin,
   Instagram,
-  Github
+  Github,
+  Calendar,
+  CalendarDays,
+  Clock
 } from "lucide-react";
 
 export const ChipLogo = ({ className = "w-8 h-8" }: { className?: string }) => (
@@ -62,7 +66,7 @@ export default function App() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);
   const [authMode, setAuthMode] = useState<"login" | "signup" | "forgot_password" | "update_password">("login");
-  const [activeTab, setActiveTab] = useState<"profile" | "links" | "nfc" | "theme">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "links" | "appointments" | "nfc" | "theme">("profile");
 
   // User Authentication sessions state
   const [currentUser, setCurrentUser] = useState<UserSession["user"] | null>(null);
@@ -73,6 +77,7 @@ export default function App() {
   // Authenticated states
   const [profile, setProfile] = useState<Profile | null>(null);
   const [links, setLinks] = useState<LinkItem[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [publicViewData, setPublicViewData] = useState<{ profile: Profile; links: LinkItem[] } | null>(null);
 
   // Form input bindings
@@ -90,6 +95,7 @@ export default function App() {
 
   // Modal control state
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<LinkItem | null>(null);
 
   // Dynamic preview/public link copy feedback
@@ -281,6 +287,10 @@ export default function App() {
 
       const connections = await api.links.list();
       setLinks(connections);
+      
+      const apts = await api.appointments.list();
+      setAppointments(apts);
+      
       return true;
     } catch (err: any) {
       showNotification(err.message || "Could not retrieve user data.", "error");
@@ -1087,6 +1097,15 @@ export default function App() {
                 </button>
                 <button
                   type="button"
+                  onClick={() => setActiveTab("appointments")}
+                  className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    activeTab === "appointments" ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/10" : "hover:bg-white/5 text-neutral-300 hover:text-white"
+                  }`}
+                >
+                  Appointments
+                </button>
+                <button
+                  type="button"
                   onClick={() => setActiveTab("theme")}
                   className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
                     activeTab === "theme" ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/10" : "hover:bg-white/5 text-neutral-300 hover:text-white"
@@ -1148,6 +1167,12 @@ export default function App() {
               className={`py-2 text-[10px] font-semibold uppercase tracking-wider ${activeTab === "links" ? "text-amber-500 border-b-2 border-amber-500" : "text-neutral-400"}`}
             >
               Links
+            </button>
+            <button
+              onClick={() => setActiveTab("appointments")}
+              className={`py-2 text-[10px] font-semibold uppercase tracking-wider ${activeTab === "appointments" ? "text-amber-500 border-b-2 border-amber-500" : "text-neutral-400"}`}
+            >
+              Appointments
             </button>
             <button
               onClick={() => setActiveTab("theme")}
@@ -1371,6 +1396,66 @@ export default function App() {
               )}
 
               {/* SUBPANEL STATE C: COLOR MATERIALS & ESTHETICS THEMES */}
+              {activeTab === "appointments" && (
+                <section>
+                  <div className="mb-4">
+                    <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500">
+                      Appointments
+                    </h2>
+                    <p className="text-[11px] text-zinc-400 mt-1">
+                      Manage bookings and meetings from your public profile.
+                    </p>
+                  </div>
+                  
+                  {appointments.length === 0 ? (
+                    <div className="text-center py-12 bg-black/20 border border-white/5 rounded-2xl">
+                      <Calendar className="w-8 h-8 text-neutral-600 mx-auto mb-3" />
+                      <p className="text-sm text-neutral-400">No appointments yet.</p>
+                      <p className="text-xs text-neutral-500 mt-1">Share your profile link to get booked.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {appointments.map(apt => (
+                        <div key={apt.id} className="p-4 bg-zinc-800/50 border border-white/10 rounded-2xl flex flex-col sm:flex-row justify-between items-start gap-4">
+                          <div>
+                            <h4 className="text-white font-bold">{apt.guest_name}</h4>
+                            <p className="text-sm text-neutral-400 font-mono mt-1">{apt.guest_email}</p>
+                            
+                            <div className="flex items-center gap-4 mt-3 text-xs text-emerald-400">
+                              <span className="flex items-center gap-1.5 bg-emerald-400/10 px-2 py-1 rounded-md">
+                                <CalendarDays className="w-3.5 h-3.5" />
+                                {new Date(apt.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                              </span>
+                              <span className="flex items-center gap-1.5 bg-emerald-400/10 px-2 py-1 rounded-md">
+                                <Clock className="w-3.5 h-3.5" />
+                                {apt.time}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <button
+                            onClick={async () => {
+                              if(confirm("Cancel this appointment? This cannot be undone.")) {
+                                try {
+                                  await api.appointments.delete(apt.id);
+                                  setAppointments(appointments.filter(a => a.id !== apt.id));
+                                  showNotification("Appointment deleted.", "success");
+                                } catch(e: any) {
+                                  showNotification("Failed to delete appointment.", "error");
+                                }
+                              }
+                            }}
+                            className="shrink-0 px-3 py-1.5 text-xs text-red-400 hover:text-white bg-red-400/10 hover:bg-red-500 transition-colors rounded-lg"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
+
               {activeTab === "theme" && (
                 <section>
                   <div className="mb-4">
@@ -1669,6 +1754,15 @@ export default function App() {
                <div className="pt-8 flex flex-col gap-3">
                  <button
                    type="button"
+                   onClick={() => setIsAppointmentModalOpen(true)}
+                   className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white text-[15px] font-bold rounded-2xl flex items-center justify-center gap-2.5 shadow-xl transition-transform active:scale-95"
+                 >
+                   <CalendarDays className="w-5 h-5" />
+                   Book Appointment
+                 </button>
+
+                 <button
+                   type="button"
                    onClick={() => handleDownloadVCard(publicViewData.profile, publicViewData.links)}
                    className="w-full py-4 bg-white hover:bg-neutral-200 text-black text-[15px] font-bold rounded-2xl flex items-center justify-center gap-2.5 shadow-xl transition-transform active:scale-95"
                  >
@@ -1742,6 +1836,18 @@ export default function App() {
         onSave={handleSaveLink}
         editingLink={editingLink}
       />
+      
+      {publicViewData && (
+        <AppointmentBookingModal
+          isOpen={isAppointmentModalOpen}
+          onClose={() => setIsAppointmentModalOpen(false)}
+          profileId={publicViewData.profile.id}
+          onSuccess={(apt) => {
+            showNotification("Appointment booked successfully! We will contact you via email.", "success");
+            setIsAppointmentModalOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }
