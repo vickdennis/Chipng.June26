@@ -524,7 +524,7 @@ export default function App() {
     if (api.isUsingSupabase()) {
       try {
         setIsLoading(true);
-        const url = await api.profile.uploadImage(file, 'avatars');
+        const url = await api.profile.uploadImage(file, 'covers');
         setEditedCover(url);
         showNotification("Cover uploaded successfully!", "success");
       } catch (err: any) {
@@ -1486,31 +1486,7 @@ export default function App() {
                          </div>
                        </div>
 
-                  {/* Social links Row */}
-                  {(editedSocialGithub || editedSocialTwitter || editedSocialLinkedin || editedSocialInstagram) && (
-                    <div className="flex justify-center gap-4 mb-4">
-                      {editedSocialGithub && (
-                        <a href={editedSocialGithub} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
-                          <Github className="w-4 h-4 text-white" />
-                        </a>
-                      )}
-                      {editedSocialLinkedin && (
-                        <a href={editedSocialLinkedin} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
-                          <Linkedin className="w-4 h-4 text-white" />
-                        </a>
-                      )}
-                      {editedSocialTwitter && (
-                        <a href={editedSocialTwitter} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
-                          <Twitter className="w-4 h-4 text-white" />
-                        </a>
-                      )}
-                      {editedSocialInstagram && (
-                        <a href={editedSocialInstagram} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
-                          <Instagram className="w-4 h-4 text-white" />
-                        </a>
-                      )}
-                    </div>
-                  )}
+                  {/* Attributes or other profile data */}
 
                   {/* Appointments & Save Contact Layout */}
                   <div className="flex gap-2 shrink-0 px-1 pb-4">
@@ -1651,31 +1627,7 @@ export default function App() {
                    </p>
                  </div>
 
-                 {/* Social links Row */}
-                 {(publicViewData.profile.social_github || publicViewData.profile.social_twitter || publicViewData.profile.social_linkedin || publicViewData.profile.social_instagram) && (
-                    <div className="flex justify-center gap-4 mt-6">
-                      {publicViewData.profile.social_github && (
-                        <a href={publicViewData.profile.social_github} target="_blank" rel="noreferrer" className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
-                          <Github className="w-5 h-5 text-white" />
-                        </a>
-                      )}
-                      {publicViewData.profile.social_linkedin && (
-                        <a href={publicViewData.profile.social_linkedin} target="_blank" rel="noreferrer" className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
-                          <Linkedin className="w-5 h-5 text-white" />
-                        </a>
-                      )}
-                      {publicViewData.profile.social_twitter && (
-                        <a href={publicViewData.profile.social_twitter} target="_blank" rel="noreferrer" className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
-                          <Twitter className="w-5 h-5 text-white" />
-                        </a>
-                      )}
-                      {publicViewData.profile.social_instagram && (
-                        <a href={publicViewData.profile.social_instagram} target="_blank" rel="noreferrer" className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
-                          <Instagram className="w-5 h-5 text-white" />
-                        </a>
-                      )}
-                    </div>
-                 )}
+                 {/* Removed social links block */}
                </div>
 
                {/* Links output stream */}

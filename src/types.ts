@@ -19,8 +19,6 @@ export interface Profile {
   bio: string | null;
   avatar_url: string | null;
   cover_image: string | null;
-  email: string | null;
-  phone: string | null;
   theme: ThemeConfig;
   icon_style: string | null;
   nfc_data: NfcData;
