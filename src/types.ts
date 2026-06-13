@@ -21,11 +21,6 @@ export interface Profile {
   cover_image: string | null;
   email: string | null;
   phone: string | null;
-  appointments_url: string | null;
-  social_twitter: string | null;
-  social_linkedin: string | null;
-  social_instagram: string | null;
-  social_github: string | null;
   theme: ThemeConfig;
   icon_style: string | null;
   nfc_data: NfcData;

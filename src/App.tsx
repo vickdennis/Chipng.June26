@@ -87,13 +87,6 @@ export default function App() {
   const [editedAvatar, setEditedAvatar] = useState("");
   const [editedUsername, setEditedUsername] = useState("");
   const [editedCover, setEditedCover] = useState("");
-  const [editedEmail, setEditedEmail] = useState("");
-  const [editedPhone, setEditedPhone] = useState("");
-  const [editedAppointmentsUrl, setEditedAppointmentsUrl] = useState("");
-  const [editedSocialTwitter, setEditedSocialTwitter] = useState("");
-  const [editedSocialLinkedin, setEditedSocialLinkedin] = useState("");
-  const [editedSocialInstagram, setEditedSocialInstagram] = useState("");
-  const [editedSocialGithub, setEditedSocialGithub] = useState("");
 
   // Modal control state
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
@@ -285,13 +278,6 @@ export default function App() {
       setEditedAvatar(pData.avatar_url || "");
       setEditedUsername(pData.username || "");
       setEditedCover(pData.cover_image || "");
-      setEditedEmail(pData.email || "");
-      setEditedPhone(pData.phone || "");
-      setEditedAppointmentsUrl(pData.appointments_url || "");
-      setEditedSocialTwitter(pData.social_twitter || "");
-      setEditedSocialLinkedin(pData.social_linkedin || "");
-      setEditedSocialInstagram(pData.social_instagram || "");
-      setEditedSocialGithub(pData.social_github || "");
 
       const connections = await api.links.list();
       setLinks(connections);
@@ -599,14 +585,7 @@ export default function App() {
         bio: editedBio,
         avatar_url: editedAvatar,
         username: editedUsername,
-        cover_image: editedCover,
-        email: editedEmail,
-        phone: editedPhone,
-        appointments_url: editedAppointmentsUrl,
-        social_twitter: editedSocialTwitter,
-        social_linkedin: editedSocialLinkedin,
-        social_instagram: editedSocialInstagram,
-        social_github: editedSocialGithub
+        cover_image: editedCover
       });
       setProfile(updated);
       showNotification("Display profile updated successfully!", "success");
@@ -775,18 +754,21 @@ export default function App() {
   };
 
   // Generate downloadable vCard context
-  const handleDownloadVCard = (targetProfile: Profile) => {
+  const handleDownloadVCard = (targetProfile: Profile, targetLinks: LinkItem[]) => {
     const dName = targetProfile.display_name || targetProfile.username;
     const notes = targetProfile.bio || "Shared via ChipNG smart connection.";
     
+    const emailLink = targetLinks.find(l => l.is_active && l.url.startsWith("mailto:"))?.url.replace("mailto:", "");
+    const phoneLink = targetLinks.find(l => l.is_active && l.url.startsWith("tel:"))?.url.replace("tel:", "");
+
     // Build continuous standard vCard text payload
     const vcard = [
       "BEGIN:VCARD",
       "VERSION:3.0",
       `FN:${dName}`,
       `N:;${dName};;;`,
-      targetProfile.email ? `EMAIL;TYPE=internet,pref:${targetProfile.email}` : "",
-      targetProfile.phone ? `TEL;TYPE=cell,voice,pref:${targetProfile.phone}` : "",
+      emailLink ? `EMAIL;TYPE=internet,pref:${emailLink}` : "",
+      phoneLink ? `TEL;TYPE=cell,voice,pref:${phoneLink}` : "",
       `NOTE:${notes.replace(/\n/g, ' ')}`,
       `URL;type=pref:https://chipng.com/${targetProfile.username}`,
       "END:VCARD"
@@ -1344,110 +1326,6 @@ export default function App() {
                       </div>
 
                       {/* Contact & Professional Information */}
-                      <div className="pt-4 border-t border-white/10 space-y-4">
-                        <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400">
-                          Contact & Scheduling
-                        </h3>
-                        
-                        <div className="space-y-1">
-                          <label className="block text-[10px] font-mono uppercase tracking-wider text-neutral-400">
-                            Public Email (vCard)
-                          </label>
-                          <input
-                            type="email"
-                            value={editedEmail}
-                            onChange={(e) => setEditedEmail(e.target.value)}
-                            placeholder="e.g. hello@chipng.com"
-                            className="w-full bg-black/50 text-sm text-white border border-white/10 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500"
-                          />
-                        </div>
-
-                        <div className="space-y-1">
-                          <label className="block text-[10px] font-mono uppercase tracking-wider text-neutral-400">
-                            Public Phone (vCard)
-                          </label>
-                          <input
-                            type="tel"
-                            value={editedPhone}
-                            onChange={(e) => setEditedPhone(e.target.value)}
-                            placeholder="e.g. +234 812 345 6789"
-                            className="w-full bg-black/50 text-sm text-white border border-white/10 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500"
-                          />
-                        </div>
-
-                        <div className="space-y-1">
-                          <label className="block text-[10px] font-mono uppercase tracking-wider text-neutral-400">
-                            Appointments URL
-                          </label>
-                          <input
-                            type="url"
-                            value={editedAppointmentsUrl}
-                            onChange={(e) => setEditedAppointmentsUrl(e.target.value)}
-                            placeholder="e.g. https://cal.com/vickthor"
-                            className="w-full bg-black/50 text-sm text-white border border-white/10 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Social Media Information */}
-                      <div className="pt-4 border-t border-white/10 space-y-4">
-                        <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400">
-                          Social Media (Horizontal Icons)
-                        </h3>
-
-                        <div className="space-y-1">
-                          <label className="block text-[10px] font-mono uppercase tracking-wider text-neutral-400">
-                            LinkedIn URL
-                          </label>
-                          <input
-                            type="url"
-                            value={editedSocialLinkedin}
-                            onChange={(e) => setEditedSocialLinkedin(e.target.value)}
-                            placeholder="https://linkedin.com/in/username"
-                            className="w-full bg-black/50 text-sm text-white border border-white/10 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500"
-                          />
-                        </div>
-
-                        <div className="space-y-1">
-                          <label className="block text-[10px] font-mono uppercase tracking-wider text-neutral-400">
-                            Twitter / X URL
-                          </label>
-                          <input
-                            type="url"
-                            value={editedSocialTwitter}
-                            onChange={(e) => setEditedSocialTwitter(e.target.value)}
-                            placeholder="https://twitter.com/username"
-                            className="w-full bg-black/50 text-sm text-white border border-white/10 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500"
-                          />
-                        </div>
-
-                        <div className="space-y-1">
-                          <label className="block text-[10px] font-mono uppercase tracking-wider text-neutral-400">
-                            Instagram URL
-                          </label>
-                          <input
-                            type="url"
-                            value={editedSocialInstagram}
-                            onChange={(e) => setEditedSocialInstagram(e.target.value)}
-                            placeholder="https://instagram.com/username"
-                            className="w-full bg-black/50 text-sm text-white border border-white/10 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500"
-                          />
-                        </div>
-
-                        <div className="space-y-1">
-                          <label className="block text-[10px] font-mono uppercase tracking-wider text-neutral-400">
-                            GitHub URL
-                          </label>
-                          <input
-                            type="url"
-                            value={editedSocialGithub}
-                            onChange={(e) => setEditedSocialGithub(e.target.value)}
-                            placeholder="https://github.com/username"
-                            className="w-full bg-black/50 text-sm text-white border border-white/10 rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500"
-                          />
-                        </div>
-                      </div>
-
                       <button
                         type="submit"
                         disabled={isLoading}
@@ -1636,19 +1514,9 @@ export default function App() {
 
                   {/* Appointments & Save Contact Layout */}
                   <div className="flex gap-2 shrink-0 px-1 pb-4">
-                    {editedAppointmentsUrl && (
-                      <a 
-                        href={editedAppointmentsUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl flex items-center justify-center shadow-lg transition-all"
-                      >
-                        Book Appointment
-                      </a>
-                    )}
                     <button
                       type="button"
-                      onClick={() => handleDownloadVCard(profile)}
+                      onClick={() => handleDownloadVCard(profile, links)}
                       className="flex-1 py-3 bg-white hover:bg-neutral-200 text-black font-bold text-xs rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all"
                     >
                       <span>Save Contact</span>
@@ -1847,19 +1715,9 @@ export default function App() {
 
                {/* Primary Save vCard & Appointment block */}
                <div className="pt-8 flex flex-col gap-3">
-                 {publicViewData.profile.appointments_url && (
-                   <a 
-                     href={publicViewData.profile.appointments_url}
-                     target="_blank"
-                     rel="noreferrer"
-                     className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white text-[15px] font-bold rounded-2xl flex items-center justify-center gap-2.5 shadow-xl transition-transform active:scale-95"
-                   >
-                     Book Appointment
-                   </a>
-                 )}
                  <button
                    type="button"
-                   onClick={() => handleDownloadVCard(publicViewData.profile)}
+                   onClick={() => handleDownloadVCard(publicViewData.profile, publicViewData.links)}
                    className="w-full py-4 bg-white hover:bg-neutral-200 text-black text-[15px] font-bold rounded-2xl flex items-center justify-center gap-2.5 shadow-xl transition-transform active:scale-95"
                  >
                    Save to Contacts
